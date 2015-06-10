@@ -18,6 +18,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>FontSyncService.cpp</itemPath>
       <itemPath>ServiceBase.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
@@ -66,6 +67,8 @@
       </item>
       <item path="FontIO.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="FontSyncService.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="FontSyncService.hpp" ex="false" tool="3" flavor2="0">
       </item>
       <item path="ServiceBase.cpp" ex="false" tool="1" flavor2="0">
@@ -102,6 +105,8 @@
       <item path="Font.hpp" ex="false" tool="3" flavor2="0">
       </item>
       <item path="FontIO.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FontSyncService.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="FontSyncService.hpp" ex="false" tool="3" flavor2="0">
       </item>

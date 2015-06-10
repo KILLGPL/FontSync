@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/FontSyncService.o \
 	${OBJECTDIR}/ServiceBase.o \
 	${OBJECTDIR}/main.o
 
@@ -62,6 +63,11 @@ LDLIBSOPTIONS=
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/fontsync: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/fontsync ${OBJECTFILES} ${LDLIBSOPTIONS}
+
+${OBJECTDIR}/FontSyncService.o: FontSyncService.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/FontSyncService.o FontSyncService.cpp
 
 ${OBJECTDIR}/ServiceBase.o: ServiceBase.cpp 
 	${MKDIR} -p ${OBJECTDIR}

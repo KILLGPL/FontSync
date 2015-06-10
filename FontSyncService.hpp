@@ -1,79 +1,63 @@
-/* 
- * File:   FontSync.hpp
- * Author: luke
- *
- * Created on June 9, 2015, 10:22 PM
- */
+#ifndef FONT_SYNC_SERVICE_HPP_INCLUDED
+#define	FONT_SYNC_SERVICE_HPP_INCLUDED
 
-#ifndef FONTSYNC_HPP
-#define	FONTSYNC_HPP
+/// some microsoft compilers still benefit from the use of #pragma once
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+# pragma once
+#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
-#include "asio.hpp"
-#include "SyncClient.hpp"
+#include <memory>
+
 #include "ServiceBase.hpp"
 
+/**
+ * A service adapter class that synchronizes a font cache across a network
+ * 
+ */
 class FontSyncService : public CServiceBase 
 {
-    Config config;
-    asio::io_service io_svc;
-    volatile bool killswitch;
-    HANDLE stoppedEvent;
-protected:
-    virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv)
-    {
-        // Log a service start message to the Application log. 
-        WriteEventLogEntry(L"CppWindowsService in OnStart",  
-            EVENTLOG_INFORMATION_TYPE); 
-        this->killswitch = false;
-        std::thread t([this](void)->void
-        {
-//            SyncClient client(config.getSyncServer(), config.getPort());
-            while(!killswitch)
-            {
-                std::cout << "tick" << std::endl;
-                std::this_thread::sleep_for(std::chrono::milliseconds(config.getSyncInterval()));
-            }
-            // Signal the stopped event. 
-            SetEvent(stoppedEvent); 
-        });
-    }
-    virtual void OnStop()
-    {
-        // Log a service stop message to the Application log. 
-        WriteEventLogEntry(L"CppWindowsService in OnStop",  
-            EVENTLOG_INFORMATION_TYPE); 
+    /// Private Implementation
+    struct FontSyncServiceImpl;
+    
+    /// Private Implementation
+    std::unique_ptr<FontSyncServiceImpl> impl;
 
-        // Indicate that the service is stopping and wait for the finish of the  
-        // main service function (ServiceWorkerThread). 
-        killswitch = TRUE; 
-        if (WaitForSingleObject(stoppedEvent, INFINITE) != WAIT_OBJECT_0) 
-        { 
-            //TODO: EEK!
-//            throw GetLastError(); 
-        }
-    }
+ protected:
+     
+    /**
+     * Invoked when Windows commands this service to start
+     * 
+     * @param dwArgc the number of arguments
+     * @param pszArgv the arguments
+     */
+    virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv);
+    
+    /**
+     * Invoked when Windows commands this service to stop
+     * 
+     */
+    virtual void OnStop();
+    
 public:
     
-    FontSyncService(const Config& config, PWSTR pszServiceName,  
-        BOOL fCanStop = TRUE,  
-        BOOL fCanShutdown = TRUE,  
-        BOOL fCanPauseContinue = FALSE) : CServiceBase(pszServiceName, fCanStop, fCanShutdown, fCanPauseContinue), config(config)
-    {
-        stoppedEvent = CreateEvent(NULL, TRUE, FALSE, NULL); 
-        if (stoppedEvent == NULL) 
-        { 
-            // TODO: EEK!!!
-        }
-    }
+    /**
+     * Constructs a FontSyncService (Invoked by Windows)
+     * @param pszServiceName the internal name of this service
+     * @param fCanStop can this service be stopped?
+     * @param fCanShutdown can this service be shut down?
+     * @param fCanPauseContinue can this service pause and continue?
+     */
+    FontSyncService(PWSTR pszServiceName, 
+                    BOOL fCanStop = TRUE, 
+                    BOOL fCanShutdown = TRUE, 
+                    BOOL fCanPauseContinue = FALSE);
         
-    virtual ~FontSyncService()
-    {
-        if (stoppedEvent != NULL)
-        {
-            CloseHandle(stoppedEvent);
-        }
-    }
+    /**
+     * Virtual Destructor
+     * 
+     */
+    virtual ~FontSyncService();
 };
 
-#endif	/* FONTSYNC_HPP */
+#endif	/* FONT_SYNC_SERVICE_HPP_INCLUDED */
 

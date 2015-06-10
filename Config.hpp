@@ -29,6 +29,11 @@ public:
     {
         return this->syncInterval;
     }
+  
+    Config() : syncServer("localhost"), port(80), syncInterval(3000), localFontDirectory("")
+    {
+        
+    }
     
     Config(const std::string& configFile)
     {
