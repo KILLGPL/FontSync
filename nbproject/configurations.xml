@@ -18,6 +18,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>Config.cpp</itemPath>
       <itemPath>FontSyncService.cpp</itemPath>
       <itemPath>ServiceBase.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
@@ -44,6 +45,7 @@
       </toolsSet>
       <compileType>
         <ccTool>
+          <architecture>1</architecture>
           <standard>8</standard>
           <incDir>
             <pElem>/home/luke/include</pElem>
@@ -61,6 +63,8 @@
           <commandLine>-static</commandLine>
         </linkerTool>
       </compileType>
+      <item path="Config.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="Config.hpp" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Font.hpp" ex="false" tool="3" flavor2="0">
@@ -100,6 +104,8 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
+      <item path="Config.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="Config.hpp" ex="false" tool="3" flavor2="0">
       </item>
       <item path="Font.hpp" ex="false" tool="3" flavor2="0">

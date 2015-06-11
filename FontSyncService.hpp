@@ -28,7 +28,9 @@ class FontSyncService : public CServiceBase
      * Invoked when Windows commands this service to start
      * 
      * @param dwArgc the number of arguments
+     * 
      * @param pszArgv the arguments
+     * 
      */
     virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv);
     
@@ -42,15 +44,11 @@ public:
     
     /**
      * Constructs a FontSyncService (Invoked by Windows)
+     * 
      * @param pszServiceName the internal name of this service
-     * @param fCanStop can this service be stopped?
-     * @param fCanShutdown can this service be shut down?
-     * @param fCanPauseContinue can this service pause and continue?
+     * 
      */
-    FontSyncService(PWSTR pszServiceName, 
-                    BOOL fCanStop = TRUE, 
-                    BOOL fCanShutdown = TRUE, 
-                    BOOL fCanPauseContinue = FALSE);
+    FontSyncService(PWSTR pszServiceName);
         
     /**
      * Virtual Destructor

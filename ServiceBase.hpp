@@ -19,12 +19,13 @@
 \***************************************************************************/ 
  
 #pragma once 
- 
+
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h> 
  
  
 class CServiceBase 
-{ 
+{
 public: 
  
     // Register the executable for a service with the Service Control Manager  
@@ -48,6 +49,13 @@ public:
     // Stop the service. 
     void Stop(); 
  
+    // Log a message to the Application event log. 
+    void WriteEventLogEntry(const PWSTR pszMessage, WORD wType); 
+ 
+    // Log an error message to the Application event log. 
+    void WriteErrorLogEntry(const PWSTR pszFunction,  
+        DWORD dwError = GetLastError());
+    
 protected: 
  
     // When implemented in a derived class, executes when a Start command is  
@@ -80,14 +88,7 @@ protected:
     void SetServiceStatus(DWORD dwCurrentState,  
         DWORD dwWin32ExitCode = NO_ERROR,  
         DWORD dwWaitHint = 0); 
- 
-    // Log a message to the Application event log. 
-    void WriteEventLogEntry(const PWSTR pszMessage, WORD wType); 
- 
-    // Log an error message to the Application event log. 
-    void WriteErrorLogEntry(const PWSTR pszFunction,  
-        DWORD dwError = GetLastError()); 
- 
+  
 private: 
  
     // Entry point for the service. It registers the handler function for the  

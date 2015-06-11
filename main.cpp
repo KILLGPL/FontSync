@@ -1,13 +1,7 @@
-/// WIN32_LEAN_AND_MEAN prevents loading non-essential parts of the SDK
-/// This is required to prevent out-of-order initialization of asio
+#include <string>
+
 #define WIN32_LEAN_AND_MEAN
-
-#include <thread> /// standard C++ threading utilities
-#include <chrono> /// standard C++ date/time utilities
-#include <memory> /// standard C++ automatic memory management utilities
-
-#include "Config.hpp"     /// fontsync service configuration
-#include "FontSyncService.hpp"   /// fontsync service
+#include <windows.h>
 
 // Internal name of the service
 #define SERVICE_NAME             L"FontSync" 
@@ -27,27 +21,37 @@
 // The password to the service account name
 #define SERVICE_PASSWORD         NULL 
 
-//Returns the last Win32 error, in string format. Returns an empty string if there is no error.
-std::string errorString(DWORD errorMessageID)
+/**
+ * Retrieves the error associated with the provided error code
+ * 
+ * @param errorCode the error code to look up
+ * 
+ * @return the error message of the provided error code
+ * 
+ */
+std::wstring errorString(DWORD errorCode)
 {
-    //Get the error message, if any.
-    if(errorMessageID == 0)
-        return "No error message has been recorded";
-
-    LPSTR messageBuffer = nullptr;
-    size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                 NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
-
-    std::string message(messageBuffer, size);
-
-    //Free the buffer.
+    if(errorCode == 0)
+    {
+        return L"no error";        
+    }
+    LPWSTR messageBuffer = nullptr;
+    size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                                 FORMAT_MESSAGE_FROM_SYSTEM | 
+                                 FORMAT_MESSAGE_IGNORE_INSERTS,
+                                 NULL, 
+                                 errorCode, 
+                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+                                 (LPWSTR)&messageBuffer, 0, NULL);
+    std::wstring message(messageBuffer, size);
     LocalFree(messageBuffer);
-
     return message;
 }
 
 /**
- * Installs this application as a windows service
+ * Attempts to install this application as a windows service
+ * 
+ * @return 0 upon success, non-zero upon failure
  */
 DWORD installService()
 {
@@ -103,6 +107,13 @@ DWORD installService()
     return error;
 }
 
+/**
+ * Attempts to uninstall this application from the local SCM
+ * 
+ * @note this method may block
+ * 
+ * @return 0 upon success, non-zero upon failure
+ */
 DWORD uninstallService()
 {
     DWORD error = NO_ERROR;
@@ -110,16 +121,13 @@ DWORD uninstallService()
     SC_HANDLE schService = NULL; 
     SERVICE_STATUS ssSvcStatus = {}; 
  
-    // Open the local default service control manager database 
     schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT); 
     if(schSCManager != NULL)
     {
-        // Open the service with delete, stop, and query status permissions 
         schService = OpenServiceW(schSCManager, SERVICE_NAME, SERVICE_STOP |  
         SERVICE_QUERY_STATUS | DELETE);
         if(schService != NULL)
         {
-            // Try to stop the service 
             if(ControlService(schService, SERVICE_CONTROL_STOP, &ssSvcStatus))
             { 
                 Sleep(1000); 
@@ -133,7 +141,6 @@ DWORD uninstallService()
                     else break; 
                 } 
             } 
-            // Now remove the service by calling DeleteService. 
             if (!DeleteService(schService)) 
             {
                 error = GetLastError();
@@ -159,6 +166,24 @@ DWORD uninstallService()
     return error;
 }
 
+#include "FontSyncService.hpp"
+
+/**
+ * Entry point for the executable.
+ * 
+ * To install the service, pass in the string "install".
+ * To uninstall the service, pass in the string "uninstall"
+ * 
+ * Windows will start the service for you via the installed SCM.
+ * Don't try this at home, kids.
+ * 
+ * @param argc the number of arguments provided by the host environment
+ * 
+ * @param argv the arguments provided by the host environment
+ * 
+ * @return 0 upon success, non-zero upon failure
+ * 
+ */
 int main(int argc, char** argv)
 {
     if(argc > 1)
@@ -170,11 +195,11 @@ int main(int argc, char** argv)
             if(result != NO_ERROR)
             {
                 wprintf(L"installService failed w/err 0x%08lx\n", result);
-                printf(errorString(result).c_str());
+                wprintf(errorString(result).c_str());
             }
             else
             {
-                wprintf(L"successfully installed  %ls\n", SERVICE_DISPLAY_NAME);
+                wprintf(L"%ls installed\n", SERVICE_DISPLAY_NAME);
             }
             return 0;
         }
@@ -184,18 +209,28 @@ int main(int argc, char** argv)
             if(result != NO_ERROR)
             {
                 wprintf(L"uninstallService failed w/err 0x%08lx\n", result);
-                printf(errorString(result).c_str());
+                wprintf(errorString(result).c_str());
             }
             else
             {
-                wprintf(L"%ls successfully uninstalled\n", SERVICE_NAME);
+                wprintf(L"%ls uninstalled\n", SERVICE_NAME);
             }
             return 0;
         }
+        else
+        {
+            wprintf(L"Parameters:\n"); 
+            wprintf(L" install  to install the service.\n"); 
+            wprintf(L" remove   to remove the service.\n"); 
+            return 1;            
+        }
     }
-    wprintf(L"Parameters:\n"); 
-    wprintf(L" install  to install the service.\n"); 
-    wprintf(L" remove   to remove the service.\n"); 
-    return 1;
+
+    FontSyncService service(SERVICE_NAME); 
+    if (!CServiceBase::Run(service)) 
+    { 
+        wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError()); 
+    }
+    return 0;
 }
 

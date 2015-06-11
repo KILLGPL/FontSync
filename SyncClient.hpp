@@ -1,6 +1,8 @@
 #ifndef CLIENT_HPP
 #define	CLIENT_HPP
 
+#include "asio.hpp"
+
 #include <string>
 #include <sstream>
 #include <stdexcept>
@@ -8,8 +10,6 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-
-#include "asio.hpp"
 
 #include "Font.hpp"
 

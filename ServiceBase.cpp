@@ -226,7 +226,7 @@ void CServiceBase::Start(DWORD dwArgc, PWSTR *pszArgv)
  
         // Set the service status to be stopped. 
         SetServiceStatus(SERVICE_STOPPED, dwError); 
-    } 
+    }
     catch (...) 
     { 
         // Log the error. 

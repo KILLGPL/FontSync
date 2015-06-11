@@ -35,6 +35,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/Config.o \
 	${OBJECTDIR}/FontSyncService.o \
 	${OBJECTDIR}/ServiceBase.o \
 	${OBJECTDIR}/main.o
@@ -44,8 +45,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-m32
+CXXFLAGS=-m32
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -63,6 +64,11 @@ LDLIBSOPTIONS=-lpthread -lpthread -lws2_32 -lwinpthread
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/fontsync: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/fontsync ${OBJECTFILES} ${LDLIBSOPTIONS} -static
+
+${OBJECTDIR}/Config.o: Config.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -w -I/home/luke/include -I/home/luke/boost_1_58_0 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Config.o Config.cpp
 
 ${OBJECTDIR}/FontSyncService.o: FontSyncService.cpp 
 	${MKDIR} -p ${OBJECTDIR}

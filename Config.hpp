@@ -2,48 +2,76 @@
 #define	CONFIG_HPP
 
 #include <cstdint>
+#include <memory>
 #include <string>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
 
+/**
+ * Service configuration.
+ * 
+ */
 class Config {
 
-    std::string syncServer;
-    uint16_t port;
-    uint32_t syncInterval;
-    std::string localFontDirectory;
+    /// Private Implementation
+    struct ConfigImpl;
     
+    /// Private Implementation
+    std::unique_ptr<ConfigImpl> impl;
+        
 public:
     
-    const std::string& getSyncServer() const
-    {
-        return this->syncServer;
-    }
+    /**
+     * Retrieves the IP of the sync server
+     * 
+     * @return the IP of the sync server
+     * 
+     * @note by default, the sync server is 127.0.0.1
+     */
+    const std::string& getHost() const;
     
-    uint16_t getPort() const
-    {
-        return this->port;
-    }
-    
-    uint32_t getSyncInterval() const
-    {
-        return this->syncInterval;
-    }
-  
-    Config() : syncServer("localhost"), port(80), syncInterval(3000), localFontDirectory("")
-    {
+    /**
+     * Retrieves the service port of the sync server
+     * 
+     * @return the service port of the sync server
+     * 
+     * @note by default, the service port is 80
+     */
+    uint16_t getPort() const;
+
+    /**
+     * Retrieves the number of milliseconds that should elapse between syncs.
+     * 
+     * @return  the number of milliseconds that should elapse between syncs.
+     * 
+     * @note by default, there is one minute between syncs
+     */
+    uint32_t getSyncMillis() const;
+
+    /**
+     * Constructs a configuration object based on the provided INI file
+     * 
+     * @param configFile the INI configuration file
+     * 
+     * @throws TODO
+     */
+    Config(const std::wstring& configFile);
         
-    }
+    /**
+     * Default constructor
+     * Creates a configuration object with the following properties:
+     * 
+     * host: 127.0.0.1
+     * port: 80
+     * syncMillis: 60000
+     */
+    Config();
     
-    Config(const std::string& configFile)
-    {
-        boost::property_tree::ptree tree;
-        boost::property_tree::ini_parser::read_ini(configFile, tree);
-        this->syncServer = tree.get<std::string>("sync_server");
-        this->port = tree.get<uint16_t>("port");
-        this->syncInterval = tree.get<uint32_t>("sync_interval");
-        this->localFontDirectory = tree.get<std::string>("local_font_dir");
-    }
+    /**
+     * Default destructor (does nothing)
+     * 
+     * Only explicitly declared because mingw is wonky.
+     * 
+     */
+    ~Config();
 };
 
 #endif	/* CONFIG_HPP */
