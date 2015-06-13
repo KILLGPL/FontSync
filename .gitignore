@@ -1,5 +1,6 @@
-build/*
-dist/*
 Debug/*
 Release/*
+FontSync/Debug/*
 .gitattributes
+FontSync.sdf
+FontSync.opensdf
