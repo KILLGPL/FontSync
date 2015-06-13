@@ -1,6 +1,7 @@
 Debug/*
 Release/*
 FontSync/Debug/*
+FontSync/Release/*
 .gitattributes
 FontSync.sdf
 FontSync.opensdf
