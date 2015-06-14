@@ -54,7 +54,7 @@ public:
      * @throws TODO
      */
     Config(const std::wstring& configFile);
-        
+    
     /**
      * Default constructor
      * Creates a configuration object with the following properties:

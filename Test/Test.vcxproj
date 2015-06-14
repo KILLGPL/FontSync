@@ -10,24 +10,9 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="FontBase.cpp" />
-    <ClCompile Include="FontSyncService.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="ServiceBase.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Config.hpp" />
-    <ClInclude Include="FontBase.hpp" />
-    <ClInclude Include="FontIO.h" />
-    <ClInclude Include="FontSyncService.hpp" />
-    <ClInclude Include="ServiceBase.hpp" />
-    <ClInclude Include="SyncClient.hpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DFBC32CE-8ED9-4631-9BF2-11132B7BEDA8}</ProjectGuid>
-    <RootNamespace>FontSync</RootNamespace>
+    <ProjectGuid>{43476C87-D9D7-4BFF-8687-8269D60285F5}</ProjectGuid>
+    <RootNamespace>Test</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -59,13 +44,17 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\include;C:\Users\root\Documents\Visual Studio 2013\Projects\FontSync\FontSync;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\root\Documents\Visual Studio 2013\Projects\FontSync\Debug;C:\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gtest_debug.lib;gtest_main_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -74,16 +63,21 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\include;C:\Users\root\Documents\Visual Studio 2013\Projects\FontSync\FontSync;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\root\Documents\Visual Studio 2013\Projects\FontSync\Test\Release;C:\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gtest_release.lib;gtest_main_release.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -11,7 +11,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include "Font.hpp"
+#include "FontBase.hpp"
 
 class SyncClient
 {
@@ -122,7 +122,7 @@ public:
      * @throws boost::property_tree::json_parser_error if a parsing error 
      *         occurs
      */
-    std::vector<Font> fetchTrackedFonts(boost::asio::io_service& service)
+    std::vector<FontBase> fetchTrackedFonts(boost::asio::io_service& service)
     {
         /// create an input stream from the json read from the sync server
         std::istringstream iss(readJson(service));
@@ -132,15 +132,14 @@ public:
         boost::property_tree::json_parser::read_json(iss, tree);
         
         /// load up some easy to use font objects to return to the caller
-        std::vector<Font> fonts;
+        std::vector<FontBase> fonts;
         for(auto font : tree)
         {
-            fonts.push_back(Font(
+ /*           fonts.push_back(FontBase(
                 font.second.get_child("name").data(),
                 font.second.get_child("category").data(),
-                font.second.get_child("type").data(),
-                font.second.get_child("path").data()
-            ));
+                font.second.get_child("type").data()
+            ));*/
         }
         return fonts;
     }
