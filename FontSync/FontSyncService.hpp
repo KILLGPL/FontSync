@@ -4,10 +4,9 @@
 /// some microsoft compilers still benefit from the use of #pragma once
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
-#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+#endif
 
 #include <memory>
-
 #include "ServiceBase.hpp"
 
 /**
@@ -16,7 +15,8 @@
  */
 class FontSyncService : public CServiceBase 
 {
-    /// Private Implementation
+	
+	/// Private Implementation
     struct FontSyncServiceImpl;
     
     /// Private Implementation
@@ -57,5 +57,4 @@ public:
     virtual ~FontSyncService();
 };
 
-#endif	/* FONT_SYNC_SERVICE_HPP_INCLUDED */
-
+#endif

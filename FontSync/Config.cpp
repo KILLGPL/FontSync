@@ -11,6 +11,7 @@ struct Config::ConfigImpl
     std::string syncServer;
     uint16_t port;
     uint32_t syncInterval;
+	std::string resource;
     std::string localFontDirectory;
 
     ConfigImpl(const std::wstring& configFile)
@@ -22,6 +23,7 @@ struct Config::ConfigImpl
 			this->syncServer = tree.get<std::string>("sync_server");
 			this->port = tree.get<uint16_t>("port");
 			this->syncInterval = tree.get<uint32_t>("sync_interval");
+			this->resource = tree.get<std::string>("resource");
 			this->localFontDirectory = tree.get<std::string>("local_font_dir");
 		}
 		catch (const boost::property_tree::ptree_error& error)
@@ -33,10 +35,12 @@ struct Config::ConfigImpl
     ConfigImpl(const std::string& syncServer, 
                uint16_t port, 
                uint32_t syncInterval, 
+			   const std::string& resource,
                const std::string& localFontDirectory) :
         syncServer(syncServer),
         port(port),
         syncInterval(syncInterval),
+		resource(resource),
         localFontDirectory(localFontDirectory)
     {
         
@@ -58,14 +62,24 @@ uint32_t Config::getSyncMillis() const
     return this->impl->syncInterval;
 }
 
+const std::string& Config::getResource() const
+{
+	return this->impl->resource;
+}
+
+const std::string& Config::getLocalFontDirectory() const
+{
+	return this->impl->localFontDirectory;
+}
+
 Config::Config() : 
-    impl(new ConfigImpl("127.0.0.1", 80, 60000, ""))
+    impl(new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\Users\\root\\Desktop\\FontSync\\Fonts"))
 {
 
 }
 
 Config::Config(const std::wstring& configFile) : 
-    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("127.0.0.1", 80, 60000, ""))
+    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\Users\\root\\Desktop\\FontSync\\Fonts"))
 {
 
 }

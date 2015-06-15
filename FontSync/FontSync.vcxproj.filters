@@ -30,12 +30,27 @@
     <ClCompile Include="FontBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ServiceInstaller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UpdateReceiver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RemoteFont.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalFont.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FontCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FontIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FontSyncService.hpp">
@@ -44,10 +59,25 @@
     <ClInclude Include="ServiceBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SyncClient.hpp">
+    <ClInclude Include="FontBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FontBase.hpp">
+    <ClInclude Include="ServiceInstaller.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UpdateReceiver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RemoteFont.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalFont.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FontCache.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

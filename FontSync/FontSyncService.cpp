@@ -1,9 +1,12 @@
+#include <sstream>
 #include <string>
 #include <thread>
 
 #include "Config.hpp"
+#include "FontCache.hpp"
 #include "FontSyncService.hpp"
-#include "SyncClient.hpp"
+#include "UpdateReceiver.hpp"
+#include "Utilities.hpp"
 
 /**
  * The private implementation of the FontSyncService class.
@@ -11,8 +14,6 @@
  */
 struct FontSyncService::FontSyncServiceImpl
 {
-    /// the io_service that handles the sync networking
-    boost::asio::io_service io_svc;
     
     /// a volatile flag signaling that this service should stop ASAP
     volatile bool shouldStop;
@@ -71,6 +72,8 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
 {
 	std::thread([&, this](void)->void{
 		Config config(dwArgc > 0 ? pszArgv[1] : L"");
+		FontCache localFontCache(config.getLocalFontDirectory());
+		UpdateReceiver receiver(config.getHost(), config.getPort(), config.getResource());
 		/// make sure we run the first time by setting the 'lastSync' 
 		/// far enough in the past.
 		auto lastSync = std::chrono::system_clock::now() -
@@ -80,9 +83,29 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
 			/// check if it's time to sync up
 			auto now = std::chrono::system_clock::now();
 			if (std::chrono::duration_cast<
-				std::chrono::milliseconds>(now - lastSync).count() > 5000)
+				std::chrono::milliseconds>(now - lastSync).count() > config.getSyncMillis())
 			{
-				/// TODO: sync logic here
+				lastSync = std::chrono::system_clock::now();
+				try
+				{
+					if (!localFontCache.isInitialized())
+					{
+						localFontCache.updateCache();
+					}
+					std::vector<LocalFont> locals = localFontCache.getCachedFonts();
+					std::vector<RemoteFont> remotes = receiver.getRemoteFontIndex();
+					/// TODO: Hash out synchronizer logic and this project is done.
+				}
+				catch (const std::runtime_error& error)
+				{
+					std::wstringstream wss;
+					wss << L"Unexpected Exception: " << error.what();
+					this->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_ERROR_TYPE);
+					wss << "Please call helpdesk for assistance.";
+					MessageBoxW(NULL, wss.str().c_str(), L"error", MB_ICONWARNING);
+					/// Choke.  Give it 60 seconds and try again.
+					lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis() - 60000);
+				}
 			}
 			else
 			{
@@ -95,7 +118,7 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
 
 		/// fire off an event to notify Windows that shutdown is complete
 		SetEvent(this->impl->stoppedEvent);
-	}).detach();
+	}).join();
 }
 
 /**

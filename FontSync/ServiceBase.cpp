@@ -516,7 +516,7 @@ void CServiceBase::SetServiceStatus(DWORD dwCurrentState,
 //     EVENTLOG_INFORMATION_TYPE 
 //     EVENTLOG_WARNING_TYPE 
 // 
-void CServiceBase::WriteEventLogEntry(const PWSTR pszMessage, WORD wType) 
+void CServiceBase::WriteEventLogEntry(const wchar_t* pszMessage, WORD wType) 
 { 
     HANDLE hEventSource = NULL; 
     LPCWSTR lpszStrings[2] = { NULL, NULL }; 

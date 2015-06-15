@@ -1,5 +1,6 @@
-#ifndef SERVICE_BASE_HPP
-#define SERVICE_BASE_HPP
+#ifndef SERVICE_BASE_HPP_INCLUDED
+#define SERVICE_BASE_HPP_INCLUDED
+
 /****************************** Module Header ******************************\ 
 * Module Name:  ServiceBase.h 
 * Project:      CppWindowsService 
@@ -17,8 +18,13 @@
 * EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED  
 * WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE. 
 \***************************************************************************/ 
- 
-#pragma once 
+
+/// Yoinked from MSDN -- with a couple modern modifications...
+
+/// some microsoft compilers still benefit from the use of #pragma once
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+# pragma once
+#endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> 
@@ -50,7 +56,7 @@ public:
     void Stop(); 
  
     // Log a message to the Application event log. 
-    void WriteEventLogEntry(const PWSTR pszMessage, WORD wType); 
+    void WriteEventLogEntry(const wchar_t* pszMessage, WORD wType); 
  
     // Log an error message to the Application event log. 
     void WriteErrorLogEntry(const PWSTR pszFunction,  

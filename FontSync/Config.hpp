@@ -1,5 +1,10 @@
-#ifndef CONFIG_HPP
-#define	CONFIG_HPP
+#ifndef CONFIG_HPP_INCLUDED
+#define	CONFIG_HPP_INCLUDED
+
+/// some microsoft compilers still benefit from the use of #pragma once
+#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+# pragma once
+#endif
 
 #include <cstdint>
 #include <memory>
@@ -46,12 +51,31 @@ public:
      */
     uint32_t getSyncMillis() const;
 
+	/**
+	 * Retreives the resource to request the remote host for
+	 *
+	 * @return the resource to request the remote host for
+	 *
+	 * @note by default, the resource is "update.php"
+	 *
+	 */
+	const std::string& getResource() const;
+
+	/**
+	 * Retrieves the local directory to install fonts to
+	 *
+	 * @return the local directory to install fonts to
+	 *
+	 * @note by default, the local directory is "C:\FontSync\Fonts"
+	 */
+	const std::string& getLocalFontDirectory() const;
+
     /**
      * Constructs a configuration object based on the provided INI file
      * 
      * @param configFile the INI configuration file
      * 
-     * @throws TODO
+     * @throws std::runtime_error if any configuration error occurs
      */
     Config(const std::wstring& configFile);
     
@@ -74,4 +98,4 @@ public:
     ~Config();
 };
 
-#endif	/* CONFIG_HPP */
+#endif
