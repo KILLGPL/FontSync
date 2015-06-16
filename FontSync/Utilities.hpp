@@ -33,4 +33,12 @@ std::wstring errorString(DWORD errorCode);
  */
 std::string md5(const std::string& file);
 
+/**
+ * Attempts to download the provided remote file, saving it to the provided local file.
+ *
+ * @throws std::runtime_error if any downloading error occurs
+ *
+ */
+void download(const std::string& writeTo, const std::string& readFrom);
+
 #endif

@@ -107,6 +107,42 @@ struct FontCache::FontCacheImpl
 		initialized = true;
 	}
 
+	void synchronize(const std::vector<RemoteFont>& remoteFonts)
+	{
+		this->unloadCache();
+
+		/// First look for any fonts that should be deleted.
+		for (auto file : detail::IterableFontDirectory(this->fontDirectory))
+		{
+			bool remove = true;
+			for (const auto& remote : remoteFonts)
+			{
+				if (file.path().filename() == remote.getName())
+				{
+					remove = false;
+					break;
+				}
+			}
+			if (remove)
+			{
+				boost::filesystem::remove(file);
+			}
+		}
+
+		/// Next, check for updates and new fonts.
+		for (const auto& font : remoteFonts)
+		{
+			std::stringstream ss;
+			ss << this->fontDirectory << boost::filesystem::path::preferred_separator << font.getName();
+			boost::filesystem::path localPath(ss.str());
+			if (!boost::filesystem::exists(localPath) || md5(ss.str()) != font.getMD5())
+			{
+				download(ss.str(), font.getRemoteFile());
+			}
+		}
+		this->updateCache();
+	}
+
 	FontCacheImpl(const std::string& fontDirectory, bool cacheImmediately) : fontDirectory(fontDirectory), initialized(false)
 	{
 		if (!boost::filesystem::exists(boost::filesystem::path(fontDirectory)))
@@ -139,6 +175,11 @@ bool FontCache::isInitialized() const
 const std::vector<LocalFont>& FontCache::getCachedFonts() const
 {
 	return this->impl->cache;
+}
+
+void FontCache::synchronize(const std::vector<RemoteFont>& remoteFonts)
+{
+	this->impl->synchronize(remoteFonts);
 }
 
 void FontCache::updateCache()

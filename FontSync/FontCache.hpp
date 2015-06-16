@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 #include "LocalFont.hpp"
-
+#include "RemoteFont.hpp"
 /**
  * An in-memory cache that links its managed fonts to the operating system 
  * only for the lifetime of the service.  When the object is either refreshed, 
@@ -64,6 +64,14 @@ public:
 	 *
 	 */
 	void updateCache();
+
+	/**
+	 * Synchronizes this cache with its remote counterpart.
+	 *
+	 * @throws std::runtime_error if any synchronization error occurs
+	 *
+	 */
+	void synchronize(const std::vector<RemoteFont>& remoteFonts);
 
 	/**
 	 * Default Destructor

@@ -33,6 +33,7 @@ public:
 	RemoteFont(const std::string& name,
 		const std::string& category,
 		const std::string& type,
+		const std::string& remoteFile, 
 		const std::string& md5Hash);
 
 	/**
@@ -46,6 +47,14 @@ public:
 	*
 	*/
 	RemoteFont& operator=(const RemoteFont&);
+
+	/**
+	 * Retrieves the remote font file
+	 *
+	 * @return the remote font file
+	 *
+	 */
+	const std::string& getRemoteFile() const;
 
 	/**
 	* Retrieves the MD5 hash of this font

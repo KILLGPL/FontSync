@@ -2,6 +2,9 @@
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
+#include <wininet.h>
+#include <urlmon.h>
+
 #include <boost/filesystem.hpp>
 
 #include <cryptopp/files.h>
@@ -42,5 +45,20 @@ std::string md5(const std::string& file)
 	catch (const std::exception& error)
 	{
 		throw std::runtime_error(error.what());
+	}
+}
+
+void download(const std::string& writeTo, const std::string& readFrom)
+{
+	DeleteUrlCacheEntry(readFrom.c_str());
+
+	HRESULT hr = URLDownloadToFile(NULL,
+		                           readFrom.c_str(),
+    		                       writeTo.c_str(),
+		                           0,
+		                           NULL);
+	if (!SUCCEEDED(hr))
+	{
+		throw new std::runtime_error("error downloading file");
 	}
 }

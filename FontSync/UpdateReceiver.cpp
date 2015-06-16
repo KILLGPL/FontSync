@@ -123,6 +123,7 @@ std::vector<RemoteFont> UpdateReceiver::getRemoteFontIndex()
 		font.second.get_child("name").data(),
 		font.second.get_child("category").data(),
 		font.second.get_child("type").data(),
+		font.second.get_child("remote_file").data(),
 		font.second.get_child("md5").data()));
 	}
 	return remoteFonts;
