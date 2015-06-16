@@ -2,6 +2,8 @@
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
+#include <boost/filesystem.hpp>
+
 #include <cryptopp/files.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/md5.h>
@@ -39,6 +41,6 @@ std::string md5(const std::string& file)
 	}
 	catch (const std::exception& error)
 	{
-		throw new std::runtime_error(error.what());
+		throw std::runtime_error(error.what());
 	}
 }

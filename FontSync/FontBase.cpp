@@ -32,16 +32,6 @@ FontBase::FontBase(const FontBase& other) : impl(new FontBaseImpl(other.impl->na
 
 }
 
-/*FontBase::FontBase(FontBase&& other) : impl(std::move(other.impl))
-{
-
-}*/
-
-/*FontBase& operator=(FontBase&& other)
-{
-	this->impl = std::move(other.impl);
-}*/
-
 FontBase& FontBase::operator=(const FontBase& other)
 {
 	this->impl->name = other.impl->name;

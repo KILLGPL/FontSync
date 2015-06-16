@@ -109,6 +109,10 @@ struct FontCache::FontCacheImpl
 
 	FontCacheImpl(const std::string& fontDirectory, bool cacheImmediately) : fontDirectory(fontDirectory), initialized(false)
 	{
+		if (!boost::filesystem::exists(boost::filesystem::path(fontDirectory)))
+		{
+			throw std::runtime_error("local font cache directory does not exist");
+		}
 		if (cacheImmediately)
 		{
 			updateCache();

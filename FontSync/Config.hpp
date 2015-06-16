@@ -89,6 +89,18 @@ public:
      */
     Config();
     
+	/**
+	 * Copy Constructor
+	 *
+	 */
+	Config(const Config& other);
+
+	/**
+	 * Copy Assignment
+	 *
+	 */
+	Config& operator=(Config& other);
+
     /**
      * Default destructor (does nothing)
      * 

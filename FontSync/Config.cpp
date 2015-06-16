@@ -8,7 +8,7 @@
 
 struct Config::ConfigImpl
 {
-    std::string syncServer;
+    std::string host;
     uint16_t port;
     uint32_t syncInterval;
 	std::string resource;
@@ -20,7 +20,7 @@ struct Config::ConfigImpl
 		{
 			boost::property_tree::ptree tree;
 			boost::property_tree::ini_parser::read_ini(boost::locale::conv::utf_to_utf<char>(configFile.c_str(), configFile.c_str() + configFile.size()), tree);
-			this->syncServer = tree.get<std::string>("sync_server");
+			this->host = tree.get<std::string>("sync_server");
 			this->port = tree.get<uint16_t>("port");
 			this->syncInterval = tree.get<uint32_t>("sync_interval");
 			this->resource = tree.get<std::string>("resource");
@@ -32,12 +32,12 @@ struct Config::ConfigImpl
 		}
     }
 
-    ConfigImpl(const std::string& syncServer, 
+	ConfigImpl(const std::string& host,
                uint16_t port, 
                uint32_t syncInterval, 
 			   const std::string& resource,
                const std::string& localFontDirectory) :
-        syncServer(syncServer),
+			   host(host),
         port(port),
         syncInterval(syncInterval),
 		resource(resource),
@@ -49,7 +49,7 @@ struct Config::ConfigImpl
 
 const std::string& Config::getHost() const
 {
-    return this->impl->syncServer;
+	return this->impl->host;
 }
     
 uint16_t Config::getPort() const
@@ -73,15 +73,33 @@ const std::string& Config::getLocalFontDirectory() const
 }
 
 Config::Config() : 
-    impl(new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\Users\\root\\Desktop\\FontSync\\Fonts"))
+    impl(new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\FontSync\\Fonts"))
 {
 
 }
 
 Config::Config(const std::wstring& configFile) : 
-    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\Users\\root\\Desktop\\FontSync\\Fonts"))
+    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\FontSync\\Fonts"))
 {
 
+}
+
+Config::Config(const Config& other) : impl(new ConfigImpl(other.impl->host, other.impl->port, other.impl->syncInterval, other.impl->resource, other.impl->localFontDirectory))
+{
+
+}
+
+Config& Config::operator=(Config& other)
+{
+	if (this != &other)
+	{
+		this->impl->host = other.impl->host;
+		this->impl->port = other.impl->port;
+		this->impl->syncInterval = other.impl->syncInterval;
+		this->impl->resource = other.impl->resource;
+		this->impl->localFontDirectory = other.impl->localFontDirectory;
+	}
+	return *this;
 }
 
 Config::~Config()

@@ -8,5 +8,8 @@ int main(int argc, char* argv[])
 	It's must be called only once in the code because multiple calls lead to conflicts and,
 	therefore, are not supported.
 	*/
-	return RUN_ALL_TESTS();
+	int result = RUN_ALL_TESTS();
+	std::cout << "press enter to exit..." << std::endl;
+	std::cin.get();
+	return result;
 }
