@@ -10,7 +10,7 @@ If you use it and like it, please buy the author copious amounts of alcohol.
 
 That is all.  Thanks!
 
-PS. Github mucked up the image below.  View it raw for maximum pleasure.
+PS. Github mucked up the image below.  View it <a href="https://github.com/KILLGPL/FontSync/raw/master/README.md">raw</a> for maximum pleasure.
 
 
 .===================================================================.
