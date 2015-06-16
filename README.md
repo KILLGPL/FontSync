@@ -10,6 +10,8 @@ If you use it and like it, please buy the author copious amounts of alcohol.
 
 That is all.  Thanks!
 
+PS. Github mucked up the image below.  View it raw for maximum pleasure.
+
 
 .===================================================================.
 ||     __   _    __   __  __   __          __   ..        __       ||
