@@ -10,9 +10,7 @@ If you use it and like it, please buy the author copious amounts of alcohol.
 
 That is all.  Thanks!
 
-PS. Github mucked up the image below.  View it <a href="https://github.com/KILLGPL/FontSync/raw/master/README.md">raw</a> for maximum pleasure.
-
-
+```txt
 .===================================================================.
 ||     __   _    __   __  __   __          __   ..        __       ||
 || -=]|__  /_\  |__) |__ |__) /  \ |\  /| |__) |  | |__/ |__ |\ |  ||
@@ -39,6 +37,7 @@ PS. Github mucked up the image below.  View it <a href="https://github.com/KILLG
 ||               jgs  /_____                                       ||
 ||                                                                 ||
 '==================================================================='
+```
 http://www.chris.com/ascii/index.php?art=food%20and%20drink/beer
 
 
