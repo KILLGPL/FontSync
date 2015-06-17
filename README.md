@@ -39,3 +39,6 @@ That is all.  Thanks!
 '==================================================================='
 ```
 http://www.chris.com/ascii/index.php?art=food%20and%20drink/beer
+
+
+[![Join the chat at https://gitter.im/KILLGPL/FontSync](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/KILLGPL/FontSync?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
