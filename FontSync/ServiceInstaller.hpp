@@ -43,12 +43,12 @@ public:
 	 * @param password the password of the user account
 	 *
 	 */
-	ServiceInstaller(const std::wstring& name, 
-		             const std::wstring& displayName, 
+    ServiceInstaller(const LPWSTR name,
+                     const LPWSTR displayName,
 					 WORD startType = SERVICE_AUTO_START, 
-					 const std::wstring& dependencies = L"", 
-					 const std::wstring& account = L"NT AUTHORITY\\LocalService", 
-					 const std::wstring& password = NULL);
+                     const LPWSTR dependencies = NULL,
+					 const LPWSTR account = NULL, 
+                     const LPWSTR password = NULL);
 
 	/**
 	* Attempts to install this application as a windows service

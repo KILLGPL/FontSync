@@ -33,7 +33,8 @@
 class CServiceBase 
 {
 public: 
- 
+    friend class FontCache;
+    static CServiceBase* TEMP_INST;
     // Register the executable for a service with the Service Control Manager  
     // (SCM). After you call Run(ServiceBase), the SCM issues a Start command,  
     // which results in a call to the OnStart method in the service. This  

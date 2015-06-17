@@ -2,19 +2,19 @@
 
 struct ServiceInstaller::ServiceInstallerImpl
 {
-	std::wstring name;
-	std::wstring displayName;
+    LPWSTR name;
+	LPWSTR displayName;
 	WORD startType;
-	std::wstring dependencies;
-	std::wstring account;
-	std::wstring password;
+	LPWSTR dependencies;
+	LPWSTR account;
+	LPWSTR password;
 
-	ServiceInstallerImpl(const std::wstring& name,
-						 const std::wstring& displayName,
+	ServiceInstallerImpl(LPWSTR name,
+						 LPWSTR displayName,
 						 WORD startType,
-						 const std::wstring& dependencies,
-						 const std::wstring& account,
-						 const std::wstring& password) :
+						 LPWSTR dependencies,
+						 LPWSTR account,
+						 LPWSTR password) :
 		name(name),
 		displayName(displayName),
 		startType(startType),
@@ -26,12 +26,12 @@ struct ServiceInstaller::ServiceInstallerImpl
 	}
 };
 
-ServiceInstaller::ServiceInstaller(const std::wstring& name, 
-	                               const std::wstring& displayName, 
+ServiceInstaller::ServiceInstaller(LPWSTR name, 
+	                               LPWSTR displayName, 
 								   WORD startType, 
-								   const std::wstring& dependencies, 
-								   const std::wstring& account, 
-								   const std::wstring& password) :
+								   LPWSTR dependencies, 
+								   LPWSTR account, 
+								   LPWSTR password) :
 	impl(new ServiceInstallerImpl(name,
 								  displayName,
 								  startType,
@@ -58,8 +58,8 @@ DWORD ServiceInstaller::install()
 			// Install the service into SCM by calling CreateService 
 			schService = CreateServiceW(
 				schSCManager,                     // SCManager database 
-				this->impl->name.c_str(),         // Name of service 
-				this->impl->displayName.c_str(),  // Name to display 
+				this->impl->name,         // Name of service 
+				this->impl->displayName,  // Name to display 
 				SERVICE_QUERY_STATUS,             // Desired access 
 				SERVICE_WIN32_OWN_PROCESS,        // Service type 
 				this->impl->startType,            // Service start type 
@@ -67,9 +67,9 @@ DWORD ServiceInstaller::install()
 				szPath,                           // Service binary 
 				NULL,                             // No load ordering group 
 				NULL,                             // No tag identifier 
-				this->impl->dependencies.c_str(), // Dependencies 
-				this->impl->account.c_str(),      // Service running account 
-				this->impl->password.c_str()      // Password of the account 
+				this->impl->dependencies, // Dependencies 
+				this->impl->account,      // Service running account 
+				this->impl->password      // Password of the account 
 				);
 			if (schService == NULL)
 			{
@@ -106,7 +106,7 @@ DWORD ServiceInstaller::uninstall()
 	schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 	if (schSCManager != NULL)
 	{
-		schService = OpenServiceW(schSCManager, this->impl->name.c_str(), SERVICE_STOP |
+		schService = OpenServiceW(schSCManager, this->impl->name, SERVICE_STOP |
 			SERVICE_QUERY_STATUS | DELETE);
 		if (schService != NULL)
 		{

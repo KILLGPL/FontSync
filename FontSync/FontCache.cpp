@@ -9,6 +9,7 @@
 #include <wingdi.h>
 
 #include "Utilities.hpp"
+#include "ServiceBase.hpp"
 
 namespace detail
 {
@@ -65,7 +66,7 @@ struct FontCache::FontCacheImpl
 			}
 		}
 		/// Alert the top level OS windows that fonts have been updated
-		SendMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
+        PostMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
 		cache.clear();
 		if(error > 0)
 		{
@@ -99,7 +100,7 @@ struct FontCache::FontCacheImpl
 			}
 		}
 		/// Alert the top level OS windows that fonts have been updated
-		SendMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
+		PostMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
 		if(error > 0)
 		{
 			throw std::runtime_error(std::to_string(error) + " fonts failed to load");

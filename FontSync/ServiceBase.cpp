@@ -176,7 +176,8 @@ CServiceBase::CServiceBase(PWSTR pszServiceName,
     m_status.dwWin32ExitCode = NO_ERROR; 
     m_status.dwServiceSpecificExitCode = 0; 
     m_status.dwCheckPoint = 0; 
-    m_status.dwWaitHint = 0; 
+    m_status.dwWaitHint = 0;
+    TEMP_INST = this;
 } 
  
  
@@ -190,7 +191,7 @@ CServiceBase::~CServiceBase(void)
 } 
  
 #pragma endregion 
- 
+CServiceBase* CServiceBase::TEMP_INST;
  
 #pragma region Service Start, Stop, Pause, Continue, and Shutdown 
  
