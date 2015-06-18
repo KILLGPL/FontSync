@@ -59,6 +59,6 @@ void download(const std::string& writeTo, const std::string& readFrom)
 		                           NULL);
 	if (!SUCCEEDED(hr))
 	{
-		throw new std::runtime_error("error downloading file");
+		throw std::runtime_error("error downloading file");
 	}
 }

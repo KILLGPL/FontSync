@@ -40,6 +40,7 @@ class FontSyncService : public CServiceBase
     virtual void OnStop();
     
 public:
+
     static FontSyncService* TEMP_INST;
     /**
      * Constructs a FontSyncService (Invoked by Windows)

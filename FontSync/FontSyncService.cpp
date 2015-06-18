@@ -122,13 +122,16 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
                             localFontCache.updateCache();
                         }
                         this->WriteEventLogEntry(L"ITERATION 5", EVENTLOG_INFORMATION_TYPE);
+                        std::wstringstream wss;
+                        wss << L"JSON: " << receiver.readJSON().c_str();
+                        this->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_INFORMATION_TYPE);
                         localFontCache.synchronize(receiver.getRemoteFontIndex());
                         this->WriteEventLogEntry(L"ITERATION 6", EVENTLOG_INFORMATION_TYPE);
                     }
                     catch (const std::runtime_error& error)
                     {
                         std::wstringstream wss;
-                        wss << L"Unexpected Exception: " << error.what();
+                        wss << L"Unexpected Exception: " << error.what() << L" : " << errorString(GetLastError()).c_str();
                         this->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_ERROR_TYPE);
                         /// Choke.  Give it 60 seconds and try again.
                         lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis() - 60000);

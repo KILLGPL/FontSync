@@ -134,12 +134,15 @@ struct FontCache::FontCacheImpl
 		for (const auto& font : remoteFonts)
 		{
 			std::stringstream ss;
-			ss << this->fontDirectory << boost::filesystem::path::preferred_separator << font.getName();
+            ss << this->fontDirectory << boost::filesystem::path::preferred_separator << font.getRemoteFile().substr(font.getRemoteFile().find_last_of("/\\") + 1);
 			boost::filesystem::path localPath(ss.str());
 			if (!boost::filesystem::exists(localPath) || md5(ss.str()) != font.getMD5())
 			{
+                std::wstringstream wss;
+                CServiceBase::TEMP_INST->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_INFORMATION_TYPE);
 				download(ss.str(), font.getRemoteFile());
-			}
+                wss << "Saved: " << localPath.c_str() << " to " << font.getRemoteFile().c_str();
+            }
 		}
 		this->updateCache();
 	}

@@ -73,13 +73,13 @@ const std::string& Config::getLocalFontDirectory() const
 }
 
 Config::Config() : 
-    impl(new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\FontSync\\Fonts"))
+    impl(new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\FontSync\\Fonts"))
 {
 
 }
 
 Config::Config(const std::wstring& configFile) : 
-    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("127.0.0.1", 80, 60000, "update.php", "C:\\FontSync\\Fonts"))
+    impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\FontSync\\Fonts"))
 {
 
 }

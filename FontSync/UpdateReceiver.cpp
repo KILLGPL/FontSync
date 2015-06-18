@@ -14,7 +14,7 @@ struct UpdateReceiver::UpdateReceiverImpl
 	void createRequest(boost::asio::streambuf& request)
 	{
 		std::ostream stream(&request);
-		stream << "GET / " << this->resource << " HTTP/1.0\r\n";
+		stream << "GET /" << this->resource << " HTTP/1.0\r\n";
 		stream << "Host: " << this->host << "\r\n";
 		stream << "Accept: */*\r\n";
 		stream << "Connection: close\r\n\r\n";
@@ -37,11 +37,31 @@ struct UpdateReceiver::UpdateReceiverImpl
 		}
 	}
 
+    void connect(boost::asio::ip::tcp::socket& socket)
+    {
+        using namespace boost::asio::ip;
+        tcp::resolver resolver(service);
+        tcp::resolver::query query(host, "http");
+        tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
+        tcp::resolver::iterator end;
+
+        boost::system::error_code error = boost::asio::error::host_not_found;
+        while (error && endpoint_iterator != end)
+        {
+            socket.close();
+            socket.connect(*endpoint_iterator++, error);
+        }
+        if (error)
+        {
+            throw boost::system::system_error(error);
+        }
+    }
+
 	std::string readJson()
 	{
 		/// create a tcp socket and connect to the sync server
 		boost::asio::ip::tcp::socket socket(service);
-		socket.connect(boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(host), port));
+        connect(socket);
 
 		/// send request
 		{
@@ -99,6 +119,11 @@ struct UpdateReceiver::UpdateReceiverImpl
 
 	}
 };
+
+std::string UpdateReceiver::readJSON()
+{
+    return this->impl->readJson();
+}
 
 UpdateReceiver::UpdateReceiver(const std::string& host, uint16_t port, const std::string& resource) :
 	impl(new UpdateReceiverImpl(host, port, resource))
