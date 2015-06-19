@@ -33,8 +33,7 @@
 class CServiceBase 
 {
 public: 
-    friend class FontCache;
-    static CServiceBase* TEMP_INST;
+
     // Register the executable for a service with the Service Control Manager  
     // (SCM). After you call Run(ServiceBase), the SCM issues a Start command,  
     // which results in a call to the OnStart method in the service. This  
@@ -57,11 +56,11 @@ public:
     void Stop(); 
  
     // Log a message to the Application event log. 
-    void WriteEventLogEntry(const wchar_t* pszMessage, WORD wType); 
+    void WriteEventLogEntry(const wchar_t* pszMessage, WORD wType) const; 
  
     // Log an error message to the Application event log. 
     void WriteErrorLogEntry(const PWSTR pszFunction,  
-        DWORD dwError = GetLastError());
+        DWORD dwError = GetLastError()) const;
     
 protected: 
  

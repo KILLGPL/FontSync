@@ -47,7 +47,7 @@ public:
                      const LPWSTR displayName,
 					 WORD startType = SERVICE_AUTO_START, 
                      const LPWSTR dependencies = NULL,
-					 const LPWSTR account = NULL, 
+                     const LPWSTR account = L"NT AUTHORITY\\SYSTEM",
                      const LPWSTR password = NULL);
 
 	/**
