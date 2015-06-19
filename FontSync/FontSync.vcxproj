@@ -29,6 +29,7 @@
     <ClInclude Include="FontCache.hpp" />
     <ClInclude Include="FontSyncService.hpp" />
     <ClInclude Include="LocalFont.hpp" />
+    <ClInclude Include="PhoneHome.hpp" />
     <ClInclude Include="RemoteFont.hpp" />
     <ClInclude Include="ServiceInstaller.hpp" />
     <ClInclude Include="ServiceBase.hpp" />

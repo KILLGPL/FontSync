@@ -67,8 +67,44 @@ public:
 	 * @return the local directory to install fonts to
 	 *
 	 * @note by default, the local directory is "C:\FontSync\Fonts"
+     *
 	 */
 	const std::string& getLocalFontDirectory() const;
+
+    /**
+     * Retrieves the time (in milliseconds) that should elapse before 
+     * retrying a failed synchronization
+     *
+     * @return the time (in milliseconds) that should elapse before 
+     * retrying a failed synchronization
+     *
+     * @note by default, one minute (60000ms) elapse before retrying
+     *
+     */
+    unsigned int getFailedSyncRetryDelay() const;
+
+    /**
+     * Retrieves the time (in milliseconds) that should elapse before 
+     * retrying a failed font update
+     *
+     * @return the time (in milliseconds) that should elapse before 
+     * retrying a failed font update
+     *
+     * @note by default, three seconds (3000ms) elapse before retrying
+     *
+     */
+    unsigned int getFailedDownloadRetryDelay() const;
+
+    /**
+     * Retrieves the number of times that a download should be retried 
+     * before aborting and moving onto the next item.
+     *
+     * @return the number of times that a download should be retried
+     *
+     * @note by default, three (3) attempts are made
+     *
+     */
+    unsigned int getFailedDownloadRetryAttempts() const;
 
     /**
      * Constructs a configuration object based on the provided INI file
@@ -81,11 +117,7 @@ public:
     
     /**
      * Default constructor
-     * Creates a configuration object with the following properties:
-     * 
-     * host: 127.0.0.1
-     * port: 80
-     * syncMillis: 60000
+     *
      */
     Config();
     

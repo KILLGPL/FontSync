@@ -10,6 +10,8 @@
 #include <vector>
 #include "LocalFont.hpp"
 #include "RemoteFont.hpp"
+#include "ServiceBase.hpp"
+
 /**
  * An in-memory cache that links its managed fonts to the operating system 
  * only for the lifetime of the service.  When the object is either refreshed, 
@@ -37,7 +39,7 @@ public:
 	 * @throws std::runtime_error if any caching error occurs
 	 *
 	 */
-	FontCache(const std::string& fontDirectory, bool cacheImmediately = false);
+	FontCache(const CServiceBase* service, const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately = false);
 
 	/**
 	 * Is this cache initialized?

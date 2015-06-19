@@ -97,7 +97,7 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
             /// if any are provided...
             Config config(getConfigPath(dwArgc, pszArgv));
             
-            FontCache localFontCache(config.getLocalFontDirectory());
+            FontCache localFontCache(this, config.getLocalFontDirectory(), config.getFailedDownloadRetryDelay(), config.getFailedDownloadRetryAttempts(), this->impl->shouldStop);
             UpdateReceiver receiver(config.getHost(), config.getPort(), config.getResource());
             
             /// make sure we run the first time by setting the 'lastSync' 
@@ -111,30 +111,21 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
                 if (std::chrono::duration_cast<
                     std::chrono::milliseconds>(now - lastSync).count() > config.getSyncMillis())
                 {
-                    this->WriteEventLogEntry(L"ITERATION 2", EVENTLOG_INFORMATION_TYPE);
                     lastSync = std::chrono::system_clock::now();
                     try
                     {
-                        this->WriteEventLogEntry(L"ITERATION 3", EVENTLOG_INFORMATION_TYPE);
                         if (!localFontCache.isInitialized())
                         {
-                            this->WriteEventLogEntry(L"ITERATION 4", EVENTLOG_INFORMATION_TYPE);
                             localFontCache.updateCache();
                         }
-                        this->WriteEventLogEntry(L"ITERATION 5", EVENTLOG_INFORMATION_TYPE);
-                        std::wstringstream wss;
-                        wss << L"JSON: " << receiver.readJSON().c_str();
-                        this->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_INFORMATION_TYPE);
                         localFontCache.synchronize(receiver.getRemoteFontIndex());
-                        this->WriteEventLogEntry(L"ITERATION 6", EVENTLOG_INFORMATION_TYPE);
                     }
                     catch (const std::runtime_error& error)
                     {
                         std::wstringstream wss;
-                        wss << L"Unexpected Exception: " << error.what() << L" : " << errorString(GetLastError()).c_str();
+                        wss << L"Font Synchronization Failed: " << error.what() << L" -- last windows error = " << errorString(GetLastError()).c_str();
                         this->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_ERROR_TYPE);
-                        /// Choke.  Give it 60 seconds and try again.
-                        lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis() - 60000);
+                        lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis() - config.getFailedSyncRetryDelay());
                     }
                 }
                 else
@@ -158,8 +149,8 @@ void FontSyncService::OnStart(DWORD dwArgc, PWSTR *pszArgv)
         {
             this->WriteEventLogEntry(L"Caught some other kind of monster", EVENTLOG_ERROR_TYPE);
         }
+        SetEvent(this->impl->stoppedEvent);
 	}).detach();
-    SetEvent(this->impl->stoppedEvent);
 }
 
 /**

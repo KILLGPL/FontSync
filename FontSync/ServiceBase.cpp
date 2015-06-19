@@ -177,7 +177,6 @@ CServiceBase::CServiceBase(PWSTR pszServiceName,
     m_status.dwServiceSpecificExitCode = 0; 
     m_status.dwCheckPoint = 0; 
     m_status.dwWaitHint = 0;
-    TEMP_INST = this;
 } 
  
  
@@ -191,7 +190,6 @@ CServiceBase::~CServiceBase(void)
 } 
  
 #pragma endregion 
-CServiceBase* CServiceBase::TEMP_INST;
  
 #pragma region Service Start, Stop, Pause, Continue, and Shutdown 
  
@@ -517,7 +515,7 @@ void CServiceBase::SetServiceStatus(DWORD dwCurrentState,
 //     EVENTLOG_INFORMATION_TYPE 
 //     EVENTLOG_WARNING_TYPE 
 // 
-void CServiceBase::WriteEventLogEntry(const wchar_t* pszMessage, WORD wType) 
+void CServiceBase::WriteEventLogEntry(const wchar_t* pszMessage, WORD wType) const
 { 
     HANDLE hEventSource = NULL; 
     LPCWSTR lpszStrings[2] = { NULL, NULL }; 
@@ -553,7 +551,7 @@ void CServiceBase::WriteEventLogEntry(const wchar_t* pszMessage, WORD wType)
 //   * pszFunction - the function that gives the error 
 //   * dwError - the error code 
 // 
-void CServiceBase::WriteErrorLogEntry(const PWSTR pszFunction, DWORD dwError) 
+void CServiceBase::WriteErrorLogEntry(const PWSTR pszFunction, DWORD dwError) const
 { 
     wchar_t szMessage[260]; 
     StringCchPrintfW(szMessage, ARRAYSIZE(szMessage),  
