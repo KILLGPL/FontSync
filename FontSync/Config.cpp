@@ -17,7 +17,7 @@ struct Config::ConfigImpl
     unsigned int failedDownloadDelay;
     unsigned int failedDownloadRetries;
 
-    ConfigImpl(const std::wstring& configFile)
+    ConfigImpl(const std::string& configFile)
     {
 		try
 		{
@@ -100,13 +100,13 @@ unsigned int Config::getFailedDownloadRetryAttempts() const
 }
 
 Config::Config() : 
-impl(new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\windows\\Fonts", 60000, 3000, 3))
+impl(new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\windows\\Fonts", 6000, 3000, 3))
 {
 
 }
 
-Config::Config(const std::wstring& configFile) : 
-impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\windows\\Fonts", 60000, 3000, 3))
+Config::Config(const std::string& configFile) : 
+impl(configFile.length() > 0 ? new ConfigImpl(configFile) : new ConfigImpl("lukeleber.github.io", 80, 60000, "update.json", "C:\\windows\\Fonts", 6000, 3000, 3))
 {
 
 }

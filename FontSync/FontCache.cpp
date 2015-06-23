@@ -9,8 +9,8 @@
 #include <Windows.h>
 #include <wingdi.h>
 
+
 #include "Utilities.hpp"
-#include "ServiceBase.hpp"
 #include <thread>
 
 namespace detail
@@ -38,9 +38,6 @@ namespace detail
 
 struct FontCache::FontCacheImpl
 {
-    /// The service to report errors to
-    const CServiceBase* service;
-
     /// The directory to use for fonts
 	std::string fontDirectory;
 
@@ -73,22 +70,20 @@ struct FontCache::FontCacheImpl
 		unsigned int error = 0;
 		for (auto file : cache)
 		{
-			if (RemoveFontResourceA(file.getLocalFile().c_str()) != 0)
-			{
-				/// apparently multiple sessions using a font can force us to call this multiple times?
-                /// keep a close eye on this...smells like an infinite loop to me if things break.
-				while (RemoveFontResourceA(file.getLocalFile().c_str()) != 0);
-			}
-			else
-			{
-				++error;
-			}
+            if (boost::filesystem::exists(file.getLocalFile()))
+            {
+                if (RemoveFontResourceA(file.getLocalFile().c_str()) != 0)
+                {
+                    /// apparently multiple sessions using a font can force us to call this multiple times?
+                    /// keep a close eye on this...smells like an infinite loop to me if things break.
+                    while (RemoveFontResourceA(file.getLocalFile().c_str()) != 0);
+                }
+                else
+                {
+                    ++error;
+                }
+            }
 		}
-        {
-            DWORD hack = BSM_APPLICATIONS | BSM_ALLDESKTOPS;
-            /// Alert the top level OS windows that fonts have been updated
-            BroadcastSystemMessage(BSF_IGNORECURRENTTASK | BSF_POSTMESSAGE, &hack, WM_FONTCHANGE, NULL, NULL);
-        }
 		cache.clear();
 
         /// should be viewed as a 'catastrophic' error.  if we can't unlink our fonts with GDI then 
@@ -125,13 +120,6 @@ struct FontCache::FontCacheImpl
 				++error;
 			}
 		}
-        {
-            DWORD hack = BSM_APPLICATIONS | BSM_ALLDESKTOPS;
-            /// Alert the top level OS windows that fonts have been updated
-            BroadcastSystemMessage(BSF_IGNORECURRENTTASK | BSF_POSTMESSAGE, &hack, WM_FONTCHANGE, NULL, NULL);
-        }
-
-
         /// should be viewed as a 'catastrophic' error.  if we can't link our fonts with GDI then 
         /// one or more of the fonts must have been corrupted...perhaps in the future we can look into 
         /// whether or not this is truly an unrecoverable situation, but for now just abort the sync.
@@ -148,39 +136,46 @@ struct FontCache::FontCacheImpl
         std::wstringstream report;
         report << "Synchronization Report\n";
         /// First look for any fonts that should be deleted.
-		for (auto file : detail::IterableFontDirectory(this->fontDirectory))
-		{
-			bool remove = true;
-			for (const auto& remote : remoteFonts)
-			{
-                if (file.path().filename() == remote.getRemoteFile().substr(remote.getRemoteFile().find_last_of("/\\") + 1))
-				{
-					remove = false;
-					break;
-				}
-			}
-			if (remove)
-			{
-                try
+        if (boost::filesystem::exists(getLocalCacheIndexPath()))
+        {
+            const std::vector<LocalFont>& installedFonts = getManagedFonts(this->fontDirectory);
+            for (auto font : installedFonts)
+            {
+                bool remove = true;
+                for (const auto& remote : remoteFonts)
                 {
-                   // boost::filesystem::remove(file);
-                    report << L"Deleted Local Font " << file.path().string().c_str() << '\n';
+                    if (font.getLocalFile().substr(font.getLocalFile().find_last_of("/\\") + 1) == remote.getRemoteFile().substr(remote.getRemoteFile().find_last_of("/\\") + 1))
+                    {
+                        remove = false;
+                        break;
+                    }
                 }
-                catch (const boost::filesystem::filesystem_error& e)
+                if (remove)
                 {
-                    /// last effort to preserve some bit of functionality...
                     try
                     {
-                        this->updateCache();
+                        if (boost::filesystem::exists(font.getLocalFile()))
+                        {
+                            boost::filesystem::remove(font.getLocalFile());
+                            report << L"Deleted Local Font " << font.getLocalFile().c_str() << '\n';
+                        }
                     }
-                    catch (...) { /*ignore*/ }
+                    catch (const boost::filesystem::filesystem_error& e)
+                    {
+                        /// last effort to preserve some bit of functionality...
+                        try
+                        {
+                            this->updateCache();
+                        }
+                        catch (...) { /*ignore*/ }
 
-                    /// something else is locking the font file.  abort.
-                    throw std::runtime_error(std::string("unable to write to ").append(file.path().filename().string()).append(e.what()));
+                        /// something else is locking the font file.  abort.
+                        throw std::runtime_error(std::string("unable to write to ").append(font.getLocalFile()).append(e.what()));
+                    }
+
                 }
-                
-			}
-		}
+            }
+        }
 
 		/// Next, check for updates and new fonts.
 		for (const auto& font : remoteFonts)
@@ -207,14 +202,14 @@ struct FontCache::FontCacheImpl
                         {
                             /// Error! Error!
                             wss << " aborting";
-                            this->service->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_ERROR_TYPE);
+                            WriteEventLogEntry(wss.str().c_str());
                             break;
                         }
                         else
                         {
                             /// Warning!  Warning!
                             wss << " attempt " << attempts << " of " << this->failedDownloadRetryAttempts;
-                            this->service->WriteEventLogEntry(wss.str().c_str(), EVENTLOG_WARNING_TYPE);
+                            WriteEventLogEntry(wss.str().c_str());
                         }
                     }
                 }
@@ -224,12 +219,13 @@ struct FontCache::FontCacheImpl
                 report << "Font " << localPath.string().c_str() << " was already up to date\n";
             }
 		}
-        this->service->WriteEventLogEntry(report.str().c_str(), EVENTLOG_INFORMATION_TYPE);
+        WriteEventLogEntry(report.str().c_str());
 		this->updateCache();
+        commitAppData();
 	}
 
-    FontCacheImpl(const CServiceBase* service, const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
-        service(service), fontDirectory(fontDirectory), failedDownloadRetryDelay(failedDownloadRetryDelay), failedDownloadRetryAttempts(failedDownloadRetryAttempts), shouldStop(shouldStop), initialized(false)
+    FontCacheImpl(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
+        fontDirectory(fontDirectory), failedDownloadRetryDelay(failedDownloadRetryDelay), failedDownloadRetryAttempts(failedDownloadRetryAttempts), shouldStop(shouldStop), initialized(false)
 	{
         boost::filesystem::path path(fontDirectory);
 		if (!boost::filesystem::exists(path))
@@ -260,8 +256,8 @@ struct FontCache::FontCacheImpl
 
 };
 
-FontCache::FontCache(const CServiceBase* service, const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
-impl(new FontCacheImpl(service, fontDirectory, failedDownloadRetryDelay, failedDownloadRetryAttempts, shouldStop, cacheImmediately))
+FontCache::FontCache(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
+impl(new FontCacheImpl(fontDirectory, failedDownloadRetryDelay, failedDownloadRetryAttempts, shouldStop, cacheImmediately))
 {
 
 }

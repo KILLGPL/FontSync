@@ -1,9 +1,12 @@
 #include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 #include "RemoteFont.hpp"
 #include "UpdateReceiver.hpp"
+#include "Utilities.hpp"
+
 struct UpdateReceiver::UpdateReceiverImpl
 {
 	boost::asio::io_service service;
@@ -110,7 +113,9 @@ struct UpdateReceiver::UpdateReceiverImpl
 		{
 			throw boost::system::system_error(ec);
 		}
-		return json.str();
+        auto rv = json.str();
+        initAppData(rv);
+		return rv;
 	}
 
 	UpdateReceiverImpl(const std::string& host, uint16_t port, const std::string& resource) :

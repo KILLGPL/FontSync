@@ -113,7 +113,7 @@ public:
      * 
      * @throws std::runtime_error if any configuration error occurs
      */
-    Config(const std::wstring& configFile);
+    Config(const std::string& configFile);
     
     /**
      * Default constructor

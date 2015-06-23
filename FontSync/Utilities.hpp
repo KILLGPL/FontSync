@@ -7,9 +7,12 @@
 #endif
 
 #include <string>
+#include <vector>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include "Config.hpp"
+#include "LocalFont.hpp"
 
 /**
 * Retrieves the error associated with the provided error code
@@ -40,5 +43,12 @@ std::string md5(const std::string& file);
  *
  */
 void download(const std::string& writeTo, const std::string& readFrom);
+void WriteEventLogEntry(const wchar_t* pszMessage);
+std::string getLocalCacheIndexPath();
+
+void initAppData(const std::string& json);
+void commitAppData();
+
+std::vector<LocalFont> getManagedFonts(const std::string& fontDirectory);
 
 #endif
