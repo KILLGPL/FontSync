@@ -2,6 +2,8 @@
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
+#include "Logging.hpp"
+
 #include <wininet.h>
 #include <urlmon.h>
 #include <comdef.h>
@@ -80,6 +82,7 @@ void download(const std::string& writeTo, const std::string& readFrom)
 
 void initAppData(const std::string& json)
 {
+    FONTSYNC_LOG_TRIVIAL(trace) << "Writing to local staging cache...";
     try
     {
         CHAR path[MAX_PATH];
@@ -147,16 +150,18 @@ void commitAppData()
 std::vector<LocalFont> getManagedFonts(const std::string& fontDirectory)
 {
     boost::property_tree::ptree tree;
-    CHAR path[MAX_PATH];
-    HRESULT result;
-    if ((result = SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path)) == S_OK)
     {
-        PathAppendA(path, "FontSync\\local_cache.json");
-        boost::property_tree::json_parser::read_json(path, tree);
-    }
-    else
-    {
-        throw std::exception(_com_error(result).ErrorMessage());
+        CHAR path[MAX_PATH];
+        HRESULT result;
+        if ((result = SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path)) == S_OK)
+        {
+            PathAppendA(path, "FontSync\\local_cache.json");
+            boost::property_tree::json_parser::read_json(path, tree);
+        }
+        else
+        {
+            throw std::exception(_com_error(result).ErrorMessage());
+        }
     }
 
     std::vector<LocalFont> rv;
@@ -174,7 +179,6 @@ std::vector<LocalFont> getManagedFonts(const std::string& fontDirectory)
                 font.second.get_child("type").data(),
                 ss.str()
                 ));
-            std::cout << "Loaded Font " << ss.str() << std::endl;
         }
     }
     return rv;

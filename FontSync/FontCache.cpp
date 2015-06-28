@@ -1,40 +1,15 @@
 #include "FontCache.hpp"
-
+#include "Logging.hpp"
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/locale.hpp>
 
 #include <Windows.h>
 #include <wingdi.h>
 
 
 #include "Utilities.hpp"
-#include <thread>
-
-namespace detail
-{
-	struct IterableFontDirectory
-	{
-		boost::filesystem::path path;
-
-		boost::filesystem::directory_iterator begin()
-		{
-			return boost::filesystem::directory_iterator(this->path);
-		}
-
-		boost::filesystem::directory_iterator end()
-		{
-			return boost::filesystem::directory_iterator();
-		}
-
-		IterableFontDirectory(const std::string& fontDirectory) : path(fontDirectory)
-		{
-
-		}
-	};
-}
 
 struct FontCache::FontCacheImpl
 {
@@ -50,92 +25,8 @@ struct FontCache::FontCacheImpl
     /// The number of times to try a download before aborting
     unsigned int failedDownloadRetryAttempts;
 
-    /// Reference to the service killswitch
-    volatile bool& shouldStop;
-
-    /// Initialized yet?
-	bool initialized;
-
-	/**
-	 * Cycles through all currently active fonts, unlinking them from the OS and removing 
-	 * them from the in-memory cache.
-	 * 
-	 * @throws std::runtime_error if any fonts cannot be unloaded
-	 *
-	 * @note the exception behavior is subject to change depending on what we find out in the wild.
-	 *
-	 */
-	void unloadCache()
-	{
-		unsigned int error = 0;
-		for (auto file : cache)
-		{
-            if (boost::filesystem::exists(file.getLocalFile()))
-            {
-                if (RemoveFontResourceA(file.getLocalFile().c_str()) != 0)
-                {
-                    /// apparently multiple sessions using a font can force us to call this multiple times?
-                    /// keep a close eye on this...smells like an infinite loop to me if things break.
-                    while (RemoveFontResourceA(file.getLocalFile().c_str()) != 0);
-                }
-                else
-                {
-                    ++error;
-                }
-            }
-		}
-		cache.clear();
-
-        /// should be viewed as a 'catastrophic' error.  if we can't unlink our fonts with GDI then 
-        /// we surely shouldn't be trying to overwrite them...perhaps in the future we can look into 
-        /// whether or not this is truly an unrecoverable situation, but for now just abort the sync.
-		if(error > 0)
-		{
-            //throw std::runtime_error(std::to_string(error) + " fonts failed to unload");
-		}
-	}
-
-	/**
-	 * Cycles through the local fonts directory, linking them with the OS and adding them 
-	 * to the in-memory cache.
-	 *
-	 * @throws std::runtime_error if any fonts cannot be loaded
-	 *
-	 * @note the exception behavior is subject to change depending on what we find out in the wild.
-	 *
-	 */
-	void updateCache()
-	{
-		unloadCache();
-		unsigned int error = 0;
-		for (auto file : detail::IterableFontDirectory(this->fontDirectory))
-		{
-			if (AddFontResourceA(file.path().string().c_str()) > 0)
-			{
-				/// TODO: learn how to extract font name/type data from winapi
-				cache.push_back(LocalFont(file.path().string(), "N/A", "N/A", file.path().string()));
-			}
-			else
-			{
-				++error;
-			}
-		}
-        /// should be viewed as a 'catastrophic' error.  if we can't link our fonts with GDI then 
-        /// one or more of the fonts must have been corrupted...perhaps in the future we can look into 
-        /// whether or not this is truly an unrecoverable situation, but for now just abort the sync.
-        if(error > 0)
-		{
-			//throw std::runtime_error(std::to_string(error) + " fonts failed to load");
-		}
-		initialized = true;
-	}
-
-	void synchronize(const std::vector<RemoteFont>& remoteFonts)
-	{
-		this->unloadCache();
-        std::wstringstream report;
-        report << "Synchronization Report\n";
-        /// First look for any fonts that should be deleted.
+    void deleteOrphans(const std::vector<RemoteFont>& remoteFonts)
+    {
         if (boost::filesystem::exists(getLocalCacheIndexPath()))
         {
             const std::vector<LocalFont>& installedFonts = getManagedFonts(this->fontDirectory);
@@ -156,76 +47,116 @@ struct FontCache::FontCacheImpl
                     {
                         if (boost::filesystem::exists(font.getLocalFile()))
                         {
+                            FONTSYNC_LOG_TRIVIAL(trace) << "Removing orphaned font: " << font.getLocalFile() << "...";
+                            int refs = 0;
+                            while (RemoveFontResource(font.getLocalFile().c_str()))
+                            {
+                                refs++;
+                            }
+                            FONTSYNC_LOG_TRIVIAL(trace) << "Removed " << refs << " references to " << font.getLocalFile() << "...";
                             boost::filesystem::remove(font.getLocalFile());
-                            report << L"Deleted Local Font " << font.getLocalFile().c_str() << '\n';
+                            FONTSYNC_LOG_TRIVIAL(trace) << "Deleted local font " << font.getLocalFile() << " from the filesystem...";
                         }
                     }
                     catch (const boost::filesystem::filesystem_error& e)
                     {
-                        /// last effort to preserve some bit of functionality...
-                        try
-                        {
-                            this->updateCache();
-                        }
-                        catch (...) { /*ignore*/ }
-
-                        /// something else is locking the font file.  abort.
-                        throw std::runtime_error(std::string("unable to write to ").append(font.getLocalFile()).append(e.what()));
+                        FONTSYNC_LOG_TRIVIAL(warning) << "Failed to remove orphaned font: " << font.getLocalFile() << "[" << e.what() << "]...";
                     }
-
                 }
             }
         }
+    }
 
-		/// Next, check for updates and new fonts.
-		for (const auto& font : remoteFonts)
-		{
-			std::stringstream ss;
+    void downloadUpdates(const std::vector<RemoteFont>& remoteFonts)
+    {
+        for (const auto& font : remoteFonts)
+        {
+            std::stringstream ss;
             ss << this->fontDirectory << '\\' << font.getRemoteFile().substr(font.getRemoteFile().find_last_of("/\\") + 1);
-			boost::filesystem::path localPath(ss.str());
-			if (!boost::filesystem::exists(localPath) || md5(ss.str()) != font.getMD5())
-			{
-                unsigned int attempts = 0;
-                while (!this->shouldStop)
+            boost::filesystem::path localPath(ss.str());
+            bool exists = boost::filesystem::exists(localPath);
+            bool upToDate = exists && md5(ss.str()) == font.getMD5();
+            if (!exists || !upToDate)
+            {
+                int refs = 0;
+                if (exists)
                 {
-                    try
+                    while (RemoveFontResource(localPath.string().c_str()))
                     {
-                        download(ss.str(), font.getRemoteFile());
-                        report << "Updated " << localPath.string().c_str() << '\n';
-                        break;
+                        refs++;
                     }
-                    catch (const std::runtime_error& error)
+                    FONTSYNC_LOG_TRIVIAL(trace) << "Removed " << refs << " reference(s) to " << font.getName();
+                }
+
+                FONTSYNC_LOG_TRIVIAL(trace) << "Sending WM_FONTCHANGE broadcast...";
+                SendMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
+
+                if (!exists)
+                {
+                    FONTSYNC_LOG_TRIVIAL(trace) << "Downloading new font [" << font.getRemoteFile() << "]...";
+                }
+                else
+                {
+                    FONTSYNC_LOG_TRIVIAL(trace) << "Updating existing font [" << font.getRemoteFile() << "]...";
+                }
+                {
+                    unsigned int attempts = 0;
+                    do
                     {
-                        std::wstringstream wss;
-                        wss << "error updating " << ss.str().c_str() << " with newer version " << font.getRemoteFile().c_str() << ": " << error.what();
-                        if (++attempts >= this->failedDownloadRetryAttempts)
+                        try
                         {
-                            /// Error! Error!
-                            wss << " aborting";
-                            WriteEventLogEntry(wss.str().c_str());
+
+                            download(ss.str(), font.getRemoteFile());
                             break;
                         }
-                        else
+                        catch (const std::runtime_error& e)
                         {
-                            /// Warning!  Warning!
-                            wss << " attempt " << attempts << " of " << this->failedDownloadRetryAttempts;
-                            WriteEventLogEntry(wss.str().c_str());
+                            if (++attempts >= this->failedDownloadRetryAttempts)
+                            {
+                                FONTSYNC_LOG_TRIVIAL(error) << "Failed to download " << font.getRemoteFile() << ": " << e.what() << "\nattempt " << attempts << " of " << this->failedDownloadRetryAttempts;
+                                break;
+                            }
+                            else
+                            {
+                                FONTSYNC_LOG_TRIVIAL(warning) << "Failed to download " << font.getRemoteFile() << ": " << e.what() << "\nattempt " << attempts << " of " << this->failedDownloadRetryAttempts;
+                            }
                         }
+                    } while (attempts < this->failedDownloadRetryAttempts);
+                }
+                if (exists)
+                {
+                   int restored = refs;
+                    while (refs--)
+                    {
+                        AddFontResource(localPath.string().c_str());
                     }
+                    FONTSYNC_LOG_TRIVIAL(trace) << "Restored " << restored << " reference(s) to " << font.getName() << "...";
+                    FONTSYNC_LOG_TRIVIAL(trace) << "Sending WM_FONTCHANGE broadcast...";
+                    SendMessage(HWND_BROADCAST, WM_FONTCHANGE, NULL, NULL);
                 }
             }
             else
             {
-                report << "Font " << localPath.string().c_str() << " was already up to date\n";
+                FONTSYNC_LOG_TRIVIAL(trace) << localPath << " was already up to date...";
             }
-		}
-        WriteEventLogEntry(report.str().c_str());
-		this->updateCache();
+        }
+    }
+
+	void synchronize(const std::vector<RemoteFont>& remoteFonts)
+	{
+        FONTSYNC_LOG_TRIVIAL(trace) << "Deleting orphaned fonts...";
+        this->deleteOrphans(remoteFonts);
+	
+        FONTSYNC_LOG_TRIVIAL(trace) << "Downloading updates...";
+        this->downloadUpdates(remoteFonts);
+
+        FONTSYNC_LOG_TRIVIAL(trace) << "Committing current index...";
         commitAppData();
+        
 	}
 
-    FontCacheImpl(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
-        fontDirectory(fontDirectory), failedDownloadRetryDelay(failedDownloadRetryDelay), failedDownloadRetryAttempts(failedDownloadRetryAttempts), shouldStop(shouldStop), initialized(false)
+    FontCacheImpl(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts) :
+        fontDirectory(fontDirectory), failedDownloadRetryDelay(failedDownloadRetryDelay), failedDownloadRetryAttempts(failedDownloadRetryAttempts)
 	{
         boost::filesystem::path path(fontDirectory);
 		if (!boost::filesystem::exists(path))
@@ -236,50 +167,48 @@ struct FontCache::FontCacheImpl
             }
             catch (const boost::filesystem::filesystem_error& error)
             {
-                /// if this happens, we're out of luck.  kill the service & phone home.
                 throw std::runtime_error(std::string("cannot create local font directory: ").append(error.what()));
             }
 		}
-		if (cacheImmediately)
-		{
-			updateCache();
-		}
+        if (boost::filesystem::exists(getLocalCacheIndexPath()))
+        {
+            for (auto font : getManagedFonts(this->fontDirectory))
+            {
+                if (AddFontResourceA(font.getLocalFile().c_str()) > 0)
+                {
+                    cache.push_back(font);
+                }
+                else
+                {
+                    FONTSYNC_LOG_TRIVIAL(warning) << "Failed to load managed font: " << font.getLocalFile() << "[" << errorString(GetLastError()) << "]...";
+                }
+            }
+        }
 	}
 
 	~FontCacheImpl()
 	{
-        /// function can throw, but at this point we really don't care.
-        /// everything is unlinked from GDI.  Just wrap the service main method
-        /// in an extra try block to suppress the potential for an appcrash.
-		unloadCache();
+        FONTSYNC_LOG_TRIVIAL(trace) << "~FontCacheImpl()";
+        for (auto font : getManagedFonts(this->fontDirectory))
+        {
+            if (RemoveFontResourceA(font.getLocalFile().c_str()) == 0)
+            {
+                FONTSYNC_LOG_TRIVIAL(warning) << "Failed to unload managed font: " << font.getLocalFile() << "[" << errorString(GetLastError()) << "]...";
+            }
+        }
 	}
 
 };
 
-FontCache::FontCache(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts, volatile bool& shouldStop, bool cacheImmediately) :
-impl(new FontCacheImpl(fontDirectory, failedDownloadRetryDelay, failedDownloadRetryAttempts, shouldStop, cacheImmediately))
+FontCache::FontCache(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts) :
+impl(new FontCacheImpl(fontDirectory, failedDownloadRetryDelay, failedDownloadRetryAttempts))
 {
 
-}
-
-bool FontCache::isInitialized() const
-{
-	return this->impl->initialized;
-}
-
-const std::vector<LocalFont>& FontCache::getCachedFonts() const
-{
-	return this->impl->cache;
 }
 
 void FontCache::synchronize(const std::vector<RemoteFont>& remoteFonts)
 {
 	this->impl->synchronize(remoteFonts);
-}
-
-void FontCache::updateCache()
-{
-	impl->updateCache();
 }
 
 FontCache::~FontCache()

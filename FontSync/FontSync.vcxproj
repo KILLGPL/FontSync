@@ -15,6 +15,7 @@
     <ClCompile Include="FontBase.cpp" />
     <ClCompile Include="FontCache.cpp" />
     <ClCompile Include="LocalFont.cpp" />
+    <ClCompile Include="Logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RemoteFont.cpp" />
     <ClCompile Include="UpdateReceiver.cpp" />
@@ -25,6 +26,7 @@
     <ClInclude Include="FontBase.hpp" />
     <ClInclude Include="FontCache.hpp" />
     <ClInclude Include="LocalFont.hpp" />
+    <ClInclude Include="Logging.hpp" />
     <ClInclude Include="PhoneHome.hpp" />
     <ClInclude Include="RemoteFont.hpp" />
     <ClInclude Include="UpdateReceiver.hpp" />

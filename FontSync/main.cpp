@@ -1,21 +1,18 @@
-#ifndef NDEBUG
-#include <iostream>
-#endif
+#include <chrono>
 #include <string>
+#include <thread>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
- 
-#include "Utilities.hpp"
+#include "Config.hpp"
 #include "FontCache.hpp"
+#include "Logging.hpp"
 #include "UpdateReceiver.hpp"
-#include <thread>
-#include <chrono>
-#include <sstream>
 
-/// Stop Flag
-volatile bool shouldStop = false;
+#include <csignal>
+
+FontCache* localFontCache;
 
 /**
  * Entry point for the executable.
@@ -31,73 +28,66 @@ volatile bool shouldStop = false;
  */
 int main(int argc, char** argv)
 {
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    auto handler = [](int sig)->void
+    {
+        if (localFontCache != nullptr)
+        {
+            FONTSYNC_LOG_TRIVIAL(info) << "shutting down...";
+            delete localFontCache;
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+            localFontCache = nullptr;
+            exit(sig);
+        }
+    };
+    signal(SIGINT, handler);
+    signal(SIGBREAK, handler);
+    signal(SIGTERM, handler);
+    signal(SIGABRT, handler);
+    signal(SIGTERM, handler);
     try
     {
         Config config(argc > 1 ? argv[1] : "");
-
-        FontCache localFontCache(config.getLocalFontDirectory(), 
-                                 config.getFailedDownloadRetryDelay(), 
-                                 config.getFailedDownloadRetryAttempts(), 
-                                 shouldStop);
-
-        UpdateReceiver receiver(config.getHost(), 
-                                config.getPort(), 
-                                config.getResource());
-
-
-        /// make sure we run right away the first time by setting the 'lastSync' far enough in the past.
-        auto lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis());
+        initLogging(config);
+        localFontCache = (new FontCache(config.get<std::string>("local_font_dir"), 
+                                 config.get<int>("failed_download_delay"), 
+                                 config.get<int>("failed_download_retries")));
+        UpdateReceiver receiver(config.get<std::string>("host"), 
+                                config.get<int>("port"), 
+                                config.get<std::string>("resource"));
+        auto lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.get<int>("sync_interval"));
         do
         {
             auto now = std::chrono::system_clock::now();
-
-            /// time to sync up?
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastSync).count() > config.getSyncMillis())
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastSync).count() > config.get<int>("sync_interval"))
             {
                 lastSync = std::chrono::system_clock::now();
-
-                /// errors thrown from here should not be fatal, so simply log 'em and soldier on.
                 try
                 {
-                    /// lazily initialize local cache on the first run
-                    if (!localFontCache.isInitialized())
+                    if (localFontCache != nullptr)
                     {
-                        localFontCache.updateCache();
+                        localFontCache->synchronize(receiver.getRemoteFontIndex());
                     }
-
-                    /// try to synchronize
-                    localFontCache.synchronize(receiver.getRemoteFontIndex());
                 }
-                catch (const std::runtime_error& error)
+                catch (const std::runtime_error& e)
                 {
-#ifndef NDEBUG
-                    std::cerr << "Font Synchronization Failed: " << error.what() << std::endl;
-#endif
-                    lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.getSyncMillis() - config.getFailedSyncRetryDelay());
+                    FONTSYNC_LOG_TRIVIAL(error) << "Font Synchronization Failed: " << e.what();
+                    lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.get<int>("sync_interval") - config.get<int>("failed_sync_delay"));
                 }
             }
             else
             {
-                /// sleep for 1 second if it's not time for a sync yet.
-                /// this allows us to respond to stop commands 
-                /// every second or so rather than every sync interval
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
-        } while (!shouldStop);
+        } while (true);
     }
     catch (const std::runtime_error& error)
     {
-        std::wstringstream wss;
-        wss << L"Unexpected Exception(outer): " << error.what();
-        WriteEventLogEntry(wss.str().c_str());
+        FONTSYNC_LOG_TRIVIAL(fatal) << "Fatal Exception: " << error.what();
     }
     catch (...)
     {
-#ifndef NDEBUG
-        std::cerr << "unknown error" << std::endl;
-#endif
+        FONTSYNC_LOG_TRIVIAL(fatal) << "Unknown Fatal Exception";
     }
-
     return 0;
 }
-

@@ -7,6 +7,8 @@
 #include "UpdateReceiver.hpp"
 #include "Utilities.hpp"
 
+#include "Logging.hpp"
+
 struct UpdateReceiver::UpdateReceiverImpl
 {
 	boost::asio::io_service service;
@@ -62,32 +64,32 @@ struct UpdateReceiver::UpdateReceiverImpl
 
 	std::string readJson()
 	{
-		/// create a tcp socket and connect to the sync server
+        
 		boost::asio::ip::tcp::socket socket(service);
+        FONTSYNC_LOG_TRIVIAL(trace) << "Connecting to " << host << ":" << port << "/" << resource << "...";
         connect(socket);
-
-		/// send request
+        FONTSYNC_LOG_TRIVIAL(trace) << "Sending HTTP request headers...";
 		{
 			boost::asio::streambuf request;
 			createRequest(request);
 			boost::asio::write(socket, request);
 		}
-
-		/// set up our receive buffer & stream
+        FONTSYNC_LOG_TRIVIAL(trace) << "Awaiting response...";;
 		boost::asio::streambuf response;
 		std::istream stream(&response);
 
-		/// read & validate the http version & status code
+        FONTSYNC_LOG_TRIVIAL(trace) << "Validating response headers...";
 		boost::asio::read_until(socket, response, "\r\n");
 		validate(stream);
 
-		/// ignore the response headers
+        FONTSYNC_LOG_TRIVIAL(trace) << "Discarding additional headers...";
 		boost::asio::read_until(socket, response, "\r\n\r\n");
 		{
 			std::string dummy;
 			while (std::getline(stream, dummy) && dummy != "\r");
 		}
 
+        FONTSYNC_LOG_TRIVIAL(trace) << "Receiving response body...";
 		/// read the response data
 		std::stringstream json;
 		boost::system::error_code ec;
@@ -101,19 +103,17 @@ struct UpdateReceiver::UpdateReceiverImpl
 		{
 			json << &response;
 		}
-
-		/// gracefully kill our socket (without caring if it failed)
 		{
 			boost::system::error_code ignored;
 			socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored);
 			socket.close(ignored);
 		}
-		/// if we hit an error before reaching EOF, throw
 		if (ec != boost::asio::error::eof)
 		{
 			throw boost::system::system_error(ec);
 		}
         auto rv = json.str();
+        FONTSYNC_LOG_TRIVIAL(trace) << "Preparing to copy to application storage...";
         initAppData(rv);
 		return rv;
 	}
