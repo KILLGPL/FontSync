@@ -36,7 +36,7 @@ public:
 	 *
 	 */
 	UpdateReceiver(const std::string& host, uint16_t port, const std::string& resource);
-
+    std::string readJSON();
 	/**
 	 * Retrieves the current remote font index from the update server
 	 *

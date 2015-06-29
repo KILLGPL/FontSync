@@ -1,81 +1,95 @@
+#include <atomic>
+#include <chrono>
+#include <csignal>
 #include <string>
+#include <thread>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-// Internal name of the service
-#define SERVICE_NAME             L"FontSync" 
- 
-// Displayed name of the service
-#define SERVICE_DISPLAY_NAME     L"Font Synchronization Service" 
- 
-#include "ServiceInstaller.hpp"
-#include "FontSyncService.hpp"
-#include "Utilities.hpp"
+#include "Config.hpp"
+#include "FontCache.hpp"
+#include "Logging.hpp"
+#include "UpdateReceiver.hpp"
+
+std::atomic_bool stop { false };
+
+/// registers a function that is invoked when shutdown is signalled
+/// this allows us to unlink from GDI for a 'clean' shutdown.
+/// should make a proper shutdown sequence at some point, eh?
+void registerSignals()
+{
+    auto handler = [](int sig)->void
+    {
+        stop = true;
+        FONTSYNC_LOG_TRIVIAL(info) << "Shutting down...forcing kill in 5 seconds.";
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    };
+    signal(SIGINT,   handler);
+    signal(SIGBREAK, handler);
+    signal(SIGTERM,  handler);
+    signal(SIGABRT,  handler);
+    signal(SIGTERM,  handler);
+}
 
 /**
  * Entry point for the executable.
- * 
- * To install the service, pass in the string "install".
- * To uninstall the service, pass in the string "uninstall"
- * 
- * Windows will start the service for you via the installed SCM.
- * Don't try this at home, kids.
  * 
  * @param argc the number of arguments provided by the host environment
  * 
  * @param argv the arguments provided by the host environment
  * 
  * @return 0 upon success, non-zero upon failure
+ *
+ * @note a configuration file path can be provided as an optional argument
+ *       for more information, refer to the enclosed config documentation.
  * 
  */
 int main(int argc, char** argv)
 {
-    if(argc > 1)
+    ShowWindow(GetConsoleWindow(), SW_SHOW);
+    try
     {
-        std::string operation = argv[1];
-        if(operation == "install")
+        Config config(argc > 1 ? argv[1] : "");
+        initLogging(config);
+        FontCache fontCache(config.get<std::string>("local_font_dir"), 
+                                 config.get<int>("failed_download_delay"), 
+                                 config.get<int>("failed_download_retries"));
+        UpdateReceiver receiver(config.get<std::string>("host"), 
+                                config.get<int>("port"), 
+                                config.get<std::string>("resource"));
+        registerSignals();
+        auto lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.get<int>("sync_interval"));
+        do
         {
-            DWORD result = ServiceInstaller(SERVICE_NAME, SERVICE_DISPLAY_NAME).install();
-            if(result != NO_ERROR)
+            auto now = std::chrono::system_clock::now();
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastSync).count() > config.get<int>("sync_interval"))
             {
-                wprintf(L"installService failed w/err 0x%08lx\n", result);
-                wprintf(errorString(result).c_str());
+                lastSync = std::chrono::system_clock::now();
+                try
+                {
+                    fontCache.synchronize(receiver.getRemoteFontIndex());
+                    FONTSYNC_LOG_TRIVIAL(info) << "Font Synchronization Complete";
+                }
+                catch (const std::runtime_error& e)
+                {
+                    FONTSYNC_LOG_TRIVIAL(error) << "Font Synchronization Failed: " << e.what();
+                    lastSync = std::chrono::system_clock::now() - std::chrono::milliseconds(config.get<int>("sync_interval") - config.get<int>("failed_sync_delay"));
+                }
             }
             else
             {
-                wprintf(L"%ls installed\n", SERVICE_DISPLAY_NAME);
+                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
             }
-            return 0;
-        }
-        else if(operation == "uninstall")
-        {
-            DWORD result = ServiceInstaller(SERVICE_NAME, SERVICE_DISPLAY_NAME).uninstall();
-            if(result != NO_ERROR)
-            {
-                wprintf(L"uninstallService failed w/err 0x%08lx\n", result);
-                wprintf(errorString(result).c_str());
-            }
-            else
-            {
-                wprintf(L"%ls uninstalled\n", SERVICE_NAME);
-            }
-            return 0;
-        }
-        else
-        {
-            wprintf(L"Parameters:\n"); 
-            wprintf(L" install  to install the service.\n"); 
-            wprintf(L" remove   to remove the service.\n"); 
-            return 1;            
-        }
+        } while (!stop);
     }
-
-    FontSyncService service(SERVICE_NAME);
-    if (!CServiceBase::Run(service)) 
-    { 
-        wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError()); 
+    catch (const std::runtime_error& error)
+    {
+        FONTSYNC_LOG_TRIVIAL(fatal) << "Fatal Exception: " << error.what();
+    }
+    catch (...)
+    {
+        FONTSYNC_LOG_TRIVIAL(fatal) << "Unknown Fatal Exception";
     }
     return 0;
 }
-

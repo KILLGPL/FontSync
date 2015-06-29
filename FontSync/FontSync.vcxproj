@@ -14,12 +14,10 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="FontBase.cpp" />
     <ClCompile Include="FontCache.cpp" />
-    <ClCompile Include="FontSyncService.cpp" />
     <ClCompile Include="LocalFont.cpp" />
+    <ClCompile Include="Logging.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RemoteFont.cpp" />
-    <ClCompile Include="ServiceBase.cpp" />
-    <ClCompile Include="ServiceInstaller.cpp" />
     <ClCompile Include="UpdateReceiver.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -27,11 +25,10 @@
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="FontBase.hpp" />
     <ClInclude Include="FontCache.hpp" />
-    <ClInclude Include="FontSyncService.hpp" />
     <ClInclude Include="LocalFont.hpp" />
+    <ClInclude Include="Logging.hpp" />
+    <ClInclude Include="PhoneHome.hpp" />
     <ClInclude Include="RemoteFont.hpp" />
-    <ClInclude Include="ServiceInstaller.hpp" />
-    <ClInclude Include="ServiceBase.hpp" />
     <ClInclude Include="UpdateReceiver.hpp" />
     <ClInclude Include="Utilities.hpp" />
   </ItemGroup>
@@ -75,7 +72,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libboost_filesystem-vc120-mt-gd-1_58.lib;cryptopp_debug.lib;%(AdditionalDependencies);urlmon.lib;wininet.lib</AdditionalDependencies>
+      <AdditionalDependencies>libboost_filesystem-vc120-mt-gd-1_58.lib;cryptopp_debug.lib;%(AdditionalDependencies);urlmon.lib;wininet.lib;Shlwapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -93,7 +90,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cryptopp_release.lib;%(AdditionalDependencies);urlmon.lib;wininet.lib</AdditionalDependencies>
+      <AdditionalDependencies>cryptopp_release.lib;%(AdditionalDependencies);urlmon.lib;wininet.lib;Shlwapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

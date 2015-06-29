@@ -1,9 +1,14 @@
 #include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 #include "RemoteFont.hpp"
 #include "UpdateReceiver.hpp"
+#include "Utilities.hpp"
+
+#include "Logging.hpp"
+
 struct UpdateReceiver::UpdateReceiverImpl
 {
 	boost::asio::io_service service;
@@ -14,7 +19,7 @@ struct UpdateReceiver::UpdateReceiverImpl
 	void createRequest(boost::asio::streambuf& request)
 	{
 		std::ostream stream(&request);
-		stream << "GET / " << this->resource << " HTTP/1.0\r\n";
+		stream << "GET /" << this->resource << " HTTP/1.0\r\n";
 		stream << "Host: " << this->host << "\r\n";
 		stream << "Accept: */*\r\n";
 		stream << "Connection: close\r\n\r\n";
@@ -37,34 +42,54 @@ struct UpdateReceiver::UpdateReceiverImpl
 		}
 	}
 
+    void connect(boost::asio::ip::tcp::socket& socket)
+    {
+        using namespace boost::asio::ip;
+        tcp::resolver resolver(service);
+        tcp::resolver::query query(host, "http");
+        tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
+        tcp::resolver::iterator end;
+
+        boost::system::error_code error = boost::asio::error::host_not_found;
+        while (error && endpoint_iterator != end)
+        {
+            socket.close();
+            socket.connect(*endpoint_iterator++, error);
+        }
+        if (error)
+        {
+            throw boost::system::system_error(error);
+        }
+    }
+
 	std::string readJson()
 	{
-		/// create a tcp socket and connect to the sync server
+        
 		boost::asio::ip::tcp::socket socket(service);
-		socket.connect(boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(host), port));
-
-		/// send request
+        FONTSYNC_LOG_TRIVIAL(trace) << "Connecting to " << host << ":" << port << "/" << resource << "...";
+        connect(socket);
+        FONTSYNC_LOG_TRIVIAL(trace) << "Sending HTTP request headers...";
 		{
 			boost::asio::streambuf request;
 			createRequest(request);
 			boost::asio::write(socket, request);
 		}
-
-		/// set up our receive buffer & stream
+        FONTSYNC_LOG_TRIVIAL(trace) << "Awaiting response...";;
 		boost::asio::streambuf response;
 		std::istream stream(&response);
 
-		/// read & validate the http version & status code
+        FONTSYNC_LOG_TRIVIAL(trace) << "Validating response headers...";
 		boost::asio::read_until(socket, response, "\r\n");
 		validate(stream);
 
-		/// ignore the response headers
+        FONTSYNC_LOG_TRIVIAL(trace) << "Discarding additional headers...";
 		boost::asio::read_until(socket, response, "\r\n\r\n");
 		{
 			std::string dummy;
 			while (std::getline(stream, dummy) && dummy != "\r");
 		}
 
+        FONTSYNC_LOG_TRIVIAL(trace) << "Receiving response body...";
 		/// read the response data
 		std::stringstream json;
 		boost::system::error_code ec;
@@ -78,19 +103,19 @@ struct UpdateReceiver::UpdateReceiverImpl
 		{
 			json << &response;
 		}
-
-		/// gracefully kill our socket (without caring if it failed)
 		{
 			boost::system::error_code ignored;
 			socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored);
 			socket.close(ignored);
 		}
-		/// if we hit an error before reaching EOF, throw
 		if (ec != boost::asio::error::eof)
 		{
 			throw boost::system::system_error(ec);
 		}
-		return json.str();
+        auto rv = json.str();
+        FONTSYNC_LOG_TRIVIAL(trace) << "Preparing to copy to application storage...";
+        initAppData(rv);
+		return rv;
 	}
 
 	UpdateReceiverImpl(const std::string& host, uint16_t port, const std::string& resource) :
@@ -99,6 +124,11 @@ struct UpdateReceiver::UpdateReceiverImpl
 
 	}
 };
+
+std::string UpdateReceiver::readJSON()
+{
+    return this->impl->readJson();
+}
 
 UpdateReceiver::UpdateReceiver(const std::string& host, uint16_t port, const std::string& resource) :
 	impl(new UpdateReceiverImpl(host, port, resource))

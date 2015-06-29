@@ -10,6 +10,7 @@
 #include <vector>
 #include "LocalFont.hpp"
 #include "RemoteFont.hpp"
+
 /**
  * An in-memory cache that links its managed fonts to the operating system 
  * only for the lifetime of the service.  When the object is either refreshed, 
@@ -37,33 +38,7 @@ public:
 	 * @throws std::runtime_error if any caching error occurs
 	 *
 	 */
-	FontCache(const std::string& fontDirectory, bool cacheImmediately = false);
-
-	/**
-	 * Is this cache initialized?
-	 * 
-	 * @return true if this cache is initialized, otherwise false
-	 *
-	 */
-	bool isInitialized() const;
-
-	/**
-	 * Retrieves a read-only view of the contents of this cache
-	 *
-	 * @return a read-only view of the contents of this cache
-	 *
-	 */
-	const std::vector<LocalFont>& getCachedFonts() const;
-
-	/**
-	 * Updates the contents of this cache.  More formally, the cache is 
-	 * emptied (unlinking all fonts with the operating system), and repoulated 
-	 * with the contents of its managed directory.
-	 *
-	 * @throws std::runtime_error if any re-caching error occurs
-	 *
-	 */
-	void updateCache();
+	FontCache(const std::string& fontDirectory, unsigned int failedDownloadRetryDelay, unsigned int failedDownloadRetryAttempts);
 
 	/**
 	 * Synchronizes this cache with its remote counterpart.
@@ -72,7 +47,7 @@ public:
 	 *
 	 */
 	void synchronize(const std::vector<RemoteFont>& remoteFonts);
-
+    
 	/**
 	 * Default Destructor
 	 *
