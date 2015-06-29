@@ -47,7 +47,7 @@ public:
 	 *
 	 */
 	void synchronize(const std::vector<RemoteFont>& remoteFonts);
-
+    
 	/**
 	 * Default Destructor
 	 *

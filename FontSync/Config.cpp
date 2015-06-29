@@ -32,7 +32,7 @@ struct Config::ConfigImpl
 {
     std::map<std::string, std::pair<boost::any, boost::any>> properties;
 
-    bool onConfigError(const std::exception& e, int options = MB_CANCELTRYCONTINUE | MB_ICONERROR | MB_DEFBUTTON3 | MB_SYSTEMMODAL)
+    bool onConfigError(const std::exception& e, int options = MB_CANCELTRYCONTINUE | MB_ICONERROR | MB_DEFBUTTON3)
     {
         std::stringstream ss;
         ss << "An error has occured during fontsync configuration:\n" << e.what() << "\n\nI can try to continue with my default settings, retry loading again after you fix the issue, or just throw my hands up and quit.\n\nWhat do you want me to do?";
@@ -42,6 +42,7 @@ struct Config::ConfigImpl
         case IDTRYAGAIN:
             FONTSYNC_LOG_TRIVIAL(info) << "re-attempting to apply user configuration...";
             return true;
+        case IDOK:
         case IDCONTINUE:
             FONTSYNC_LOG_TRIVIAL(info) << "falling back to default configuration...";
             return false;
